@@ -5,6 +5,7 @@
 
 import random, time, pygame, sys, copy
 from pygame.locals import *
+from agents import *
 
 FPS = 25
 WINDOWWIDTH = 640
@@ -154,6 +155,14 @@ PIECES = {'S': S_SHAPE_TEMPLATE,
           'O': O_SHAPE_TEMPLATE,
           'T': T_SHAPE_TEMPLATE}
 
+# offsets given as (x_left, x_right, y_top)
+OFFSETS = {'S': [(1, 1, 2), (2, 1, 1)],
+          'Z': [(1, 1, 2), (1, 2, 1)],
+          'I': [(2, 2 ,0), (0, 1, 2)],
+          'O': [(1, 2, 2)],
+          'J': [(1, 1, 1), (2, 1, 1), (1, 1, 2), (1, 2, 1)],
+          'L': [(1, 1, 1), (2, 1, 1), (1, 1, 2), (1, 2, 1)],
+          'T': [(1, 1, 1), (2, 1, 1), (1, 1, 2), (1, 2, 1)]}
 
 def main():
     global FPSCLOCK, DISPLAYSURF, BASICFONT, BIGFONT
@@ -181,6 +190,8 @@ def runGame():
     board = getBlankBoard()
     score = 0
 
+    agent = RandomAgent()
+
     nextPiece = getNewPiece()
 
     while True: # game loop
@@ -193,10 +204,10 @@ def runGame():
         if len(actions) == 0:
             return
         # choose random action
-        rotation, column, startingRow = random.choice(actions)
+        rotation, column = agent.chooseAction(actions)
         fallingPiece['rotation'] = rotation
         fallingPiece['x'] = column
-        fallingPiece['y'] = startingRow
+        fallingPiece['y'] = 0 - OFFSETS[fallingPiece['shape']][rotation][2]
         for i in range(1, BOARDHEIGHT):
             if not isValidPosition(board, fallingPiece, adjY=i):
                 break
@@ -208,7 +219,7 @@ def runGame():
         DISPLAYSURF.fill(BGCOLOR)
         drawBoard(board)
         drawStatus(score)
-        drawPiece(nextPiece, pixelx=WINDOWWIDTH-120, pixely=100)
+        drawNextPiece(nextPiece)
 
         while checkForKeyPress() == None:
             pygame.display.update()
@@ -274,6 +285,7 @@ def getNewPiece():
     newPiece = {'shape': shape,
                 'rotation': 0,
                 'color': random.randint(0, len(COLORS)-1)}
+    template = PIECES[shape][newPiece['rotation']]
     return newPiece
 
 
@@ -297,30 +309,20 @@ def isOnBoard(x, y):
     return x >= 0 and x < BOARDWIDTH and y < BOARDHEIGHT
 
 
-def getXOffset(template):
-    for c in range(TEMPLATEHEIGHT):
-        for r in range(TEMPLATEWIDTH):
-            if template[r][c] != BLANK:
-                return c
-
-def getYOffset(template):
-    for r in range(TEMPLATEWIDTH):
-        for c in range(TEMPLATEHEIGHT):
-            if template[r][c] != BLANK:
-                return r
-
 def getActions(board, piece):
     actions = []
     for rotation in range(len(PIECES[piece['shape']])):
-        for x in range(BOARDWIDTH):
-            testPiece = copy.deepcopy(piece)
-            testPiece['rotation'] = rotation
-            template = PIECES[testPiece['shape']][testPiece['rotation']]
-            testPiece['x'] = x - getXOffset(template)
-            testPiece['y'] = 0 - getYOffset(template)
+        xLOffset, xROffset, yOffset = OFFSETS[piece['shape']][rotation]
+        testPiece = copy.deepcopy(piece)
+        testPiece['rotation'] = rotation
+        testPiece['y'] = 0 - yOffset
+        for x in range(0 - xLOffset, BOARDWIDTH):
+            print x
+            testPiece['x'] = x
             if not isValidPosition(board, testPiece):
                 continue
-            actions.append((rotation, testPiece['x'], testPiece['y']))
+            print x
+            actions.append((rotation, testPiece['x']))
     return actions
 
 
@@ -417,6 +419,16 @@ def drawPiece(piece, pixelx=None, pixely=None):
         for y in range(TEMPLATEHEIGHT):
             if shapeToDraw[y][x] != BLANK:
                 drawBox(None, None, piece['color'], pixelx + (x * BOXSIZE), pixely + (y * BOXSIZE))
+
+
+def drawNextPiece(piece):
+    # draw the "next" text
+    nextSurf = BASICFONT.render('Next:', True, TEXTCOLOR)
+    nextRect = nextSurf.get_rect()
+    nextRect.topleft = (WINDOWWIDTH - 120, 80)
+    DISPLAYSURF.blit(nextSurf, nextRect)
+    # draw the "next" piece
+    drawPiece(piece, pixelx=WINDOWWIDTH-120, pixely=100)
 
 
 if __name__ == '__main__':
