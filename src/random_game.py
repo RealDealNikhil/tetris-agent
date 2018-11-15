@@ -3,7 +3,7 @@
 # http://inventwithpython.com/pygame
 # Released under a "Simplified BSD" license
 
-import random, time, pygame, sys
+import random, time, pygame, sys, copy
 from pygame.locals import *
 
 FPS = 25
@@ -184,20 +184,16 @@ def runGame():
     while True: # game loop
         # get falling piece
         fallingPiece = getNewPiece()
-        # draw falling piece up top
         # check all actions for falling piece on board
+        actions = getActions(board, fallingPiece)
         # choose random action
-        # checkforquit
-        # drawboard with piece placed
-        if not isValidPosition(board, fallingPiece):
-            return # can't fit a new piece on the board, so game over
 
         checkForQuit()
         # drawing everything on the screen
         DISPLAYSURF.fill(BGCOLOR)
         drawBoard(board)
         drawStatus(score)
-        drawPiece(fallingPiece)
+        drawPiece(fallingPiece, pixelx=WINDOWWIDTH-120, pixely=100)
 
         while checkForKeyPress() == None:
             pygame.display.update()
@@ -261,9 +257,7 @@ def getNewPiece():
     # return a random new piece in a random rotation and color
     shape = random.choice(list(PIECES.keys()))
     newPiece = {'shape': shape,
-                'rotation': random.randint(0, len(PIECES[shape]) - 1),
-                'x': int(BOARDWIDTH / 2) - int(TEMPLATEWIDTH / 2),
-                'y': -2, # start it above the board (i.e. less than 0)
+                'rotation': 0,
                 'color': random.randint(0, len(COLORS)-1)}
     return newPiece
 
@@ -287,6 +281,26 @@ def getBlankBoard():
 def isOnBoard(x, y):
     return x >= 0 and x < BOARDWIDTH and y < BOARDHEIGHT
 
+
+def getTopLine(board):
+    topLine = []
+    for col in range(BOARDWIDTH):
+        blockFound = False
+        for row in range(BOARDHEIGHT):
+            if board[col][row] != BLANK:
+                topLine.append((col, row - 1))
+                blockFound = True
+                break
+        if not blockFound:
+            topLine.append((col, row))
+    return topLine
+
+def getActions(board, piece):
+    topLine = getTopLine(board)
+    for rotation in range(len(PIECES[piece['shape']])):
+        testPiece = copy.deepcopy(piece)
+        testPiece['rotation'] = rotation
+            
 
 def isValidPosition(board, piece, adjX=0, adjY=0):
     # Return True if the piece is within the board and not colliding

@@ -3,6 +3,7 @@
 # http://inventwithpython.com/pygame
 # Released under a "Simplified BSD" license
 
+import pprint
 import random, time, pygame, sys
 from pygame.locals import *
 
@@ -208,8 +209,10 @@ def runGame():
                     # Pausing the game
                     DISPLAYSURF.fill(BGCOLOR)
                     pygame.mixer.music.stop()
+                    # pprint.pprint(board)
+                    print getTopLine(board)
                     showTextScreen('Paused') # pause until a key press
-                    pygame.mixer.music.play(-1, 0.0)
+                    # pygame.mixer.music.play(-1, 0.0)
                     lastFallTime = time.time()
                     lastMoveDownTime = time.time()
                     lastMoveSidewaysTime = time.time()
@@ -390,6 +393,18 @@ def getBlankBoard():
 def isOnBoard(x, y):
     return x >= 0 and x < BOARDWIDTH and y < BOARDHEIGHT
 
+def getTopLine(board):
+    topLine = []
+    for col in range(BOARDWIDTH):
+        blockFound = False
+        for row in range(BOARDHEIGHT):
+            if board[col][row] != BLANK:
+                topLine.append((col, row - 1))
+                blockFound = True
+                break
+        if not blockFound:
+            topLine.append((col, row))
+    return topLine
 
 def isValidPosition(board, piece, adjX=0, adjY=0):
     # Return True if the piece is within the board and not colliding
@@ -437,6 +452,7 @@ def removeCompleteLines(board):
 def convertToPixelCoords(boxx, boxy):
     # Convert the given xy coordinates of the board to xy
     # coordinates of the location on the screen.
+    print boxx, boxy
     return (XMARGIN + (boxx * BOXSIZE)), (TOPMARGIN + (boxy * BOXSIZE))
 
 
@@ -485,6 +501,7 @@ def drawPiece(piece, pixelx=None, pixely=None):
         # if pixelx & pixely hasn't been specified, use the location stored in the piece data structure
         pixelx, pixely = convertToPixelCoords(piece['x'], piece['y'])
 
+    pygame.draw.circle(DISPLAYSURF,(255,0,0), (pixelx, pixely), 3)
     # draw each of the boxes that make up the piece
     for x in range(TEMPLATEWIDTH):
         for y in range(TEMPLATEHEIGHT):
