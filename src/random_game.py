@@ -181,19 +181,34 @@ def runGame():
     board = getBlankBoard()
     score = 0
 
+    nextPiece = getNewPiece()
+
     while True: # game loop
         # get falling piece
-        fallingPiece = getNewPiece()
+        fallingPiece = nextPiece
+        nextPiece = getNewPiece()
         # check all actions for falling piece on board
         actions = getActions(board, fallingPiece)
+        print actions
+        if len(actions) == 0:
+            return
         # choose random action
+        rotation, column, startingRow = random.choice(actions)
+        fallingPiece['rotation'] = rotation
+        fallingPiece['x'] = column
+        fallingPiece['y'] = startingRow
+        for i in range(1, BOARDHEIGHT):
+            if not isValidPosition(board, fallingPiece, adjY=i):
+                break
+        fallingPiece['y'] += i - 1
+        addToBoard(board, fallingPiece)
 
         checkForQuit()
         # drawing everything on the screen
         DISPLAYSURF.fill(BGCOLOR)
         drawBoard(board)
         drawStatus(score)
-        drawPiece(fallingPiece, pixelx=WINDOWWIDTH-120, pixely=100)
+        drawPiece(nextPiece, pixelx=WINDOWWIDTH-120, pixely=100)
 
         while checkForKeyPress() == None:
             pygame.display.update()
@@ -282,25 +297,32 @@ def isOnBoard(x, y):
     return x >= 0 and x < BOARDWIDTH and y < BOARDHEIGHT
 
 
-def getTopLine(board):
-    topLine = []
-    for col in range(BOARDWIDTH):
-        blockFound = False
-        for row in range(BOARDHEIGHT):
-            if board[col][row] != BLANK:
-                topLine.append((col, row - 1))
-                blockFound = True
-                break
-        if not blockFound:
-            topLine.append((col, row))
-    return topLine
+def getXOffset(template):
+    for c in range(TEMPLATEHEIGHT):
+        for r in range(TEMPLATEWIDTH):
+            if template[r][c] != BLANK:
+                return c
+
+def getYOffset(template):
+    for r in range(TEMPLATEWIDTH):
+        for c in range(TEMPLATEHEIGHT):
+            if template[r][c] != BLANK:
+                return r
 
 def getActions(board, piece):
-    topLine = getTopLine(board)
+    actions = []
     for rotation in range(len(PIECES[piece['shape']])):
-        testPiece = copy.deepcopy(piece)
-        testPiece['rotation'] = rotation
-            
+        for x in range(BOARDWIDTH):
+            testPiece = copy.deepcopy(piece)
+            testPiece['rotation'] = rotation
+            template = PIECES[testPiece['shape']][testPiece['rotation']]
+            testPiece['x'] = x - getXOffset(template)
+            testPiece['y'] = 0 - getYOffset(template)
+            if not isValidPosition(board, testPiece):
+                continue
+            actions.append((rotation, testPiece['x'], testPiece['y']))
+    return actions
+
 
 def isValidPosition(board, piece, adjX=0, adjY=0):
     # Return True if the piece is within the board and not colliding

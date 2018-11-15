@@ -155,6 +155,14 @@ PIECES = {'S': S_SHAPE_TEMPLATE,
           'O': O_SHAPE_TEMPLATE,
           'T': T_SHAPE_TEMPLATE}
 
+# offsets given as (x_left, x_right, y_top)
+OFFSETS = {'S': [(1, 1, 2), (2, 1, 2)],
+          'Z': [(1, 1, 2), (1, 2, 2)],
+          'I': [(2, 0 ,2), (0, 3, 1)],
+          'O': [(1, 2, 2)],
+          'J': [(1, 1, 1), (2, 1, 1), (1, 1, 2), (1, 2, 1)],
+          'L': [(1, 1, 1), (2, 1, 1), (1, 1, 2), (1, 2, 1)],
+          'T': [(1, 1, 1), (2, 1, 1), (1, 1, 2), (1, 2, 1)]}
 
 def main():
     global FPSCLOCK, DISPLAYSURF, BASICFONT, BIGFONT
@@ -363,14 +371,32 @@ def calculateLevelAndFallFreq(score):
     fallFreq = 0.27 - (level * 0.02)
     return level, fallFreq
 
+
+def getXOffset(template):
+    for c in range(TEMPLATEHEIGHT):
+        for r in range(TEMPLATEWIDTH):
+            if template[r][c] != BLANK:
+                return c
+
+def getYOffset(template):
+    for r in range(TEMPLATEWIDTH):
+        for c in range(TEMPLATEHEIGHT):
+            if template[r][c] != BLANK:
+                return r
+
+
 def getNewPiece():
     # return a random new piece in a random rotation and color
     shape = random.choice(list(PIECES.keys()))
     newPiece = {'shape': shape,
                 'rotation': random.randint(0, len(PIECES[shape]) - 1),
-                'x': int(BOARDWIDTH / 2) - int(TEMPLATEWIDTH / 2),
-                'y': -2, # start it above the board (i.e. less than 0)
+                # 'x': int(BOARDWIDTH / 2) - int(TEMPLATEWIDTH / 2),
+                # 'y': -2, # start it above the board (i.e. less than 0)
                 'color': random.randint(0, len(COLORS)-1)}
+    template = PIECES[shape][newPiece['rotation']]
+    xOffset, _, yOffset = OFFSETS[shape][newPiece['rotation']]
+    newPiece['x'] = 0 - xOffset
+    newPiece['y'] = 0 - yOffset
     return newPiece
 
 
