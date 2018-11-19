@@ -11,8 +11,8 @@ FPS = 25
 WINDOWWIDTH = 640
 WINDOWHEIGHT = 480
 BOXSIZE = 20
-BOARDWIDTH = 10
-BOARDHEIGHT = 20
+BOARDWIDTH = 5
+BOARDHEIGHT = 10
 BLANK = '.'
 
 MOVESIDEWAYSFREQ = 0.15
@@ -174,45 +174,84 @@ def main():
     pygame.display.set_caption('Tetromino')
 
     showTextScreen('Tetromino')
-    while True: # game loop
+    agent = QLearningAgent()
+
+    i = 1
+    while i <= 10000: # game loop
+        print "Game " + str(i)
         # if random.randint(0, 1) == 0:
             # pygame.mixer.music.load('tetrisb.mid')
         # else:
             # pygame.mixer.music.load('tetrisc.mid')
         # pygame.mixer.music.play(-1, 0.0)
-        runGame()
+        runGame(agent, inTesting=True)
         # pygame.mixer.music.stop()
+        if i % 1000 == 0:
+            showTextScreen('Game Over')
+        i += 1
+    while True:
+        runGame(agent)
         showTextScreen('Game Over')
 
 
-def runGame():
+def runGame(agent, inTesting=False):
     # setup variables for the start of the game
     board = getBlankBoard()
     score = 0
 
-    agent = RandomAgent()
-
+    fallingPiece = None
     nextPiece = getNewPiece()
+    observeTransition = False
 
     while True: # game loop
+        if fallingPiece != None:
+            prevState = (topLine, fallingPiece['shape'])
+            prevAction = (rotation, column)
+            observeTransition = True
+
         # get falling piece
         fallingPiece = nextPiece
         nextPiece = getNewPiece()
-        # check all actions for falling piece on board
-        actions = getActions(board, fallingPiece)
-        print actions
-        if len(actions) == 0:
+
+        # get all actions for falling piece on board
+        legalActions = getLegalActions(board, fallingPiece)
+        # print legalActions
+        if len(legalActions) == 0:
             return
+
+        topLine = getTopLine(board)
+        # print topLine
+
+        # observe state change
+        state = (topLine, fallingPiece['shape'])
+        if observeTransition:
+            agent.observeTransition(prevState, prevAction, state, reward, legalActions)
+
         # choose random action
-        rotation, column = agent.chooseAction(actions)
+        rotation, column = agent.getAction(state, legalActions)
+
+        # set piece options based on action
         fallingPiece['rotation'] = rotation
         fallingPiece['x'] = column
         fallingPiece['y'] = 0 - OFFSETS[fallingPiece['shape']][rotation][2]
+
+        # drop piece in column
         for i in range(1, BOARDHEIGHT):
             if not isValidPosition(board, fallingPiece, adjY=i):
                 break
         fallingPiece['y'] += i - 1
+
         addToBoard(board, fallingPiece)
+
+        # draw interim board if not in testing so we can see what's happening
+        if not inTesting:
+            drawBoard(board)
+            while checkForKeyPress() == None:
+                pygame.display.update()
+
+        # reward function
+        reward = getReward(board)
+        score += reward
 
         checkForQuit()
         # drawing everything on the screen
@@ -221,8 +260,9 @@ def runGame():
         drawStatus(score)
         drawNextPiece(nextPiece)
 
-        while checkForKeyPress() == None:
-            pygame.display.update()
+        if not inTesting:
+            while checkForKeyPress() == None:
+                pygame.display.update()
 
 
 def makeTextObjs(text, font, color):
@@ -309,7 +349,32 @@ def isOnBoard(x, y):
     return x >= 0 and x < BOARDWIDTH and y < BOARDHEIGHT
 
 
-def getActions(board, piece):
+def getTopLine(board):
+    topLine = []
+    for col in range(BOARDWIDTH):
+        blockFound = False
+        for row in range(BOARDHEIGHT):
+            if board[col][row] != BLANK:
+                topLine.append((row - 1, col))
+                blockFound = True
+                break
+        if not blockFound:
+            topLine.append((row, col))
+    # normalize topLine adjust rows so that lowest rows become row 0 (19), offset higher rows by this amount
+    # columns are absolute. Do not adjust those.
+    return tuple(normalize(topLine))
+
+def normalize(topLine):
+    highest = max(topLine, key=lambda i: i[0])[0]
+    offset = BOARDHEIGHT - 1 - highest
+    if offset == 0:
+        return topLine
+    newTopLine = []
+    for pair in topLine:
+        newTopLine.append((pair[0] + offset, pair[1]))
+    return newTopLine
+
+def getLegalActions(board, piece):
     actions = []
     for rotation in range(len(PIECES[piece['shape']])):
         xLOffset, xROffset, yOffset = OFFSETS[piece['shape']][rotation]
@@ -317,11 +382,9 @@ def getActions(board, piece):
         testPiece['rotation'] = rotation
         testPiece['y'] = 0 - yOffset
         for x in range(0 - xLOffset, BOARDWIDTH):
-            print x
             testPiece['x'] = x
             if not isValidPosition(board, testPiece):
                 continue
-            print x
             actions.append((rotation, testPiece['x']))
     return actions
 
@@ -368,6 +431,11 @@ def removeCompleteLines(board):
             y -= 1 # move on to check next row up
     return numLinesRemoved
 
+def getReward(board):
+    numLinesRemoved = removeCompleteLines(board)
+    if numLinesRemoved == 0:
+        return -1
+    return 1000 * numLinesRemoved
 
 def convertToPixelCoords(boxx, boxy):
     # Convert the given xy coordinates of the board to xy

@@ -1,3 +1,5 @@
+import random
+
 # Counter class taken from cs182 coding psets
 class Counter(dict):
     """
@@ -211,3 +213,8 @@ class Counter(dict):
                 continue
             addend[key] = -1 * y[key]
         return addend
+
+
+def flipCoin( p ):
+    r = random.random()
+    return r < p
