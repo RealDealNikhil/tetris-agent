@@ -3,16 +3,15 @@
 # http://inventwithpython.com/pygame
 # Released under a "Simplified BSD" license
 
-import random, time, pygame, sys, copy
+import random, time, pygame, sys, copy, pickle
 from pygame.locals import *
-from agents import *
 
 FPS = 25
 WINDOWWIDTH = 640
 WINDOWHEIGHT = 480
 BOXSIZE = 20
 BOARDWIDTH = 5
-BOARDHEIGHT = 10
+BOARDHEIGHT = 8
 BLANK = '.'
 
 MOVESIDEWAYSFREQ = 0.15
@@ -166,6 +165,12 @@ OFFSETS = {'S': [(1, 1, 2), (2, 1, 1)],
 
 def main():
     global FPSCLOCK, DISPLAYSURF, BASICFONT, BIGFONT
+
+    args = readCommand( sys.argv[1:] ) # Set game options for agent based on input
+    agent = args['agent']
+    willExport = args['export']
+    valuesLoaded = args['valuesLoaded']
+
     pygame.init()
     FPSCLOCK = pygame.time.Clock()
     DISPLAYSURF = pygame.display.set_mode((WINDOWWIDTH, WINDOWHEIGHT))
@@ -173,28 +178,31 @@ def main():
     BIGFONT = pygame.font.Font('freesansbold.ttf', 100)
     pygame.display.set_caption('Tetromino')
 
-    showTextScreen('Tetromino')
-    agent = QLearningAgent()
+    showTextScreen('Tetroid')
 
-    i = 1
-    while i <= 10000: # game loop
-        print "Game " + str(i)
-        # if random.randint(0, 1) == 0:
-            # pygame.mixer.music.load('tetrisb.mid')
-        # else:
-            # pygame.mixer.music.load('tetrisc.mid')
-        # pygame.mixer.music.play(-1, 0.0)
-        runGame(agent, inTesting=True)
-        # pygame.mixer.music.stop()
-        if i % 1000 == 0:
-            showTextScreen('Game Over')
-        i += 1
+    if not valuesLoaded:
+        while agent.isInTraining():
+            agent.startEpisode()
+            runGame(agent, inTesting=False)
+            if agent.shouldStopEpisode():
+                agent.stopEpisode()
+                averageRewards = agent.episodeRewards / agent.gamesInEpisode
+                print "TESTING GAMES UP TO " + str(agent.gamesInEpisode * agent.episodesSoFar)
+                print "Average Rewards for this set of episodes: " + str(averageRewards)
+                showTextScreen("Game Over")
+            agent.recordGame()
+            print agent.gamesSoFar
+
+        if willExport:
+            writeToFile(agent.q_values)
+
+    # now we are testing
     while True:
         runGame(agent)
-        showTextScreen('Game Over')
+        showTextScreen("Game Over")
 
 
-def runGame(agent, inTesting=False):
+def runGame(agent, inTesting=True):
     # setup variables for the start of the game
     board = getBlankBoard()
     score = 0
@@ -205,7 +213,7 @@ def runGame(agent, inTesting=False):
 
     while True: # game loop
         if fallingPiece != None:
-            prevState = (topLine, fallingPiece['shape'])
+            prevState = (topLine, fallingPiece['shape'], nextPiece['shape'])
             prevAction = (rotation, column)
             observeTransition = True
 
@@ -215,15 +223,13 @@ def runGame(agent, inTesting=False):
 
         # get all actions for falling piece on board
         legalActions = getLegalActions(board, fallingPiece)
-        # print legalActions
         if len(legalActions) == 0:
             return
 
         topLine = getTopLine(board)
-        # print topLine
 
         # observe state change
-        state = (topLine, fallingPiece['shape'])
+        state = (topLine, fallingPiece['shape'], nextPiece['shape'])
         if observeTransition:
             agent.observeTransition(prevState, prevAction, state, reward, legalActions)
 
@@ -236,15 +242,15 @@ def runGame(agent, inTesting=False):
         fallingPiece['y'] = 0 - OFFSETS[fallingPiece['shape']][rotation][2]
 
         # drop piece in column
-        for i in range(1, BOARDHEIGHT):
-            if not isValidPosition(board, fallingPiece, adjY=i):
-                break
+        i = 0
+        while isValidPosition(board, fallingPiece, adjY=i):
+            i += 1
         fallingPiece['y'] += i - 1
 
         addToBoard(board, fallingPiece)
 
-        # draw interim board if not in testing so we can see what's happening
-        if not inTesting:
+        # draw interim board if in testing so we can see what's happening
+        if inTesting:
             drawBoard(board)
             while checkForKeyPress() == None:
                 pygame.display.update()
@@ -260,7 +266,7 @@ def runGame(agent, inTesting=False):
         drawStatus(score)
         drawNextPiece(nextPiece)
 
-        if not inTesting:
+        if inTesting:
             while checkForKeyPress() == None:
                 pygame.display.update()
 
@@ -318,14 +324,12 @@ def checkForQuit():
             terminate() # terminate if the KEYUP event was for the Esc key
         pygame.event.post(event) # put the other KEYUP event objects back
 
-# should edit this
 def getNewPiece():
     # return a random new piece in a random rotation and color
     shape = random.choice(list(PIECES.keys()))
     newPiece = {'shape': shape,
                 'rotation': 0,
                 'color': random.randint(0, len(COLORS)-1)}
-    template = PIECES[shape][newPiece['rotation']]
     return newPiece
 
 
@@ -497,6 +501,81 @@ def drawNextPiece(piece):
     DISPLAYSURF.blit(nextSurf, nextRect)
     # draw the "next" piece
     drawPiece(piece, pixelx=WINDOWWIDTH-120, pixely=100)
+
+
+def writeToFile(d):
+    with open("values.txt", "wb") as f:
+        pickle.dump(d, f)
+
+# NEEDS IMPLEMENTATION
+def readDictFile(file):
+    with open(file, "rb") as f:
+        d=pickle.load(f)
+    return d
+
+
+def parseAgentArgs(str):
+    if str == None: return {}
+    pieces = str.split(',')
+    opts = {}
+    for p in pieces:
+        if '=' in p:
+            key, val = p.split('=')
+        else:
+            key,val = p, 1
+        opts[key] = val
+    return opts
+
+
+def readCommand(argv):
+    from optparse import OptionParser
+
+    # THIS USAGE STRING IS STILL IN PROGRESS AND SHOULD BE DISREGARDED UNTIL COMPLETION
+    usageStr = """
+    USAGE:      python tetris.py <options>
+    EXAMPLES:   (1) python tetroid.py
+                    - use the Random Agent
+                (2) python tetroid.py --agent QLearningAgent --agentArgs numTraining=5
+                OR python tetroid.py -t QLearningAgent -a numTraining=5
+                    - begins training tetroid agent with 5 sets of training episodes
+    """
+
+    parser = OptionParser(usageStr)
+
+    parser.add_option('-t', '--agent', dest='agent',
+                      help='the agent TYPE to use', default='RandomAgent')
+    parser.add_option('-a','--agentArgs',dest='agentArgs',
+                      help='Comma separated values sent to agent. e.g. "opt1=val1,opt2,opt3=val3"')
+    parser.add_option('-x', '--export', dest='exportValues',
+                      action='store_true', default=False, help='Export Learned q-values/weights for future testing')
+    parser.add_option('-l', '--load', dest='dictFile',
+                      help='Read in a dictionary from FILE', metavar='FILE')
+
+    options, otherjunk = parser.parse_args(argv)
+    if len(otherjunk) != 0:
+        raise Exception('Command line input not understood: ' + str(otherjunk))
+
+    agentOpts = parseAgentArgs(options.agentArgs)
+    tetroidType = loadAgent(options.agent)
+
+    if options.dictFile:
+        values = readDictFile(options.dictFile)
+        valuesLoaded = True
+        tetroid = tetroidType(values=values)
+    else:
+        valuesLoaded = False
+        tetroid = tetroidType(**agentOpts)
+
+    args = dict()
+    args['agent'] = tetroid
+    args['export'] = options.exportValues
+    args['valuesLoaded'] = valuesLoaded
+    return args
+
+
+def loadAgent(tetroid):
+    module = __import__("agents")
+    return getattr(module, tetroid)
 
 
 if __name__ == '__main__':
