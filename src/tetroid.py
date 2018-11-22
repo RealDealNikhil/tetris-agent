@@ -3,20 +3,21 @@
 # http://inventwithpython.com/pygame
 # Released under a "Simplified BSD" license
 
-import pickle
+import cPickle
 from game import *
 
 def main():
 
     args = readCommand( sys.argv[1:] ) # Set game options for agent based on input
     agent = args['agent']
-    willExport = args['export']
-    valuesLoaded = args['valuesLoaded']
+    exportFile = args['exportFile']
+    train = args['train']
+    noTest = args['noTest']
 
     game = Game()
 
-    # we have not loaded any pre-set values. We must train agent.
-    if not valuesLoaded:
+    # train agent.
+    if train:
         while agent.isInTraining():
             agent.startEpisode()
             game.runGame(agent, inTesting=False)
@@ -29,24 +30,27 @@ def main():
             agent.recordGame()
             print agent.gamesSoFar
 
-        if willExport:
-            writeToFile(agent.q_values)
+        if exportFile:
+            writeToFile(exportFile, agent.q_values)
 
-    # now we are testing
-    while True:
-        game.runGame(agent)
-        game.showTextScreen("Game Over")
-
-
-
-def writeToFile(d):
-    with open("values.txt", "wb") as f:
-        pickle.dump(d, f)
+    # test agent
+    if not noTest:
+        while True:
+            game.runGame(agent)
+            game.showTextScreen("Game Over")
 
 
-def readDictFile(file):
-    with open(file, "rb") as f:
-        d=pickle.load(f)
+
+def writeToFile(fileName, d):
+    filePath = "../values/" + fileName + ".pickle"
+    with open(filePath, "wb") as f:
+        cPickle.dump(d, f)
+
+
+def readDictFile(fileName):
+    filePath = "../values/" + fileName + ".pickle"
+    with open(filePath, "rb") as f:
+        d = cPickle.load(f)
     return d
 
 
@@ -72,20 +76,28 @@ def readCommand(argv):
     EXAMPLES:   (1) python tetroid.py
                     - use the Random Agent
                 (2) python tetroid.py --agent QLearningAgent --agentArgs numTraining=5
-                OR python tetroid.py -t QLearningAgent -a numTraining=5
+                OR python tetroid.py -a QLearningAgent -g numTraining=5
                     - begins training tetroid agent with 5 sets of training episodes
     """
 
     parser = OptionParser(usageStr)
 
-    parser.add_option('-t', '--agent', dest='agent',
+    parser.add_option('-a', '--agent', dest='agent',
                       help='the agent TYPE to use', default='RandomAgent')
-    parser.add_option('-a','--agentArgs',dest='agentArgs',
+    parser.add_option('-g','--agentArgs',dest='agentArgs',
                       help='Comma separated values sent to agent. e.g. "opt1=val1,opt2,opt3=val3"')
-    parser.add_option('-x', '--export', dest='exportValues',
-                      action='store_true', default=False, help='Export Learned q-values/weights for future testing')
+    parser.add_option('-x', '--export', dest='exportFile',
+                      help='Export Learned q-values/weights to ../values/FILENAME for future testing. Do not include filename extension',
+                      metavar='FILENAME')
     parser.add_option('-l', '--load', dest='dictFile',
-                      help='Read in a dictionary from FILE', metavar='FILE')
+                      help='Read in a dictionary from ../values/FILENAME. Do not include filename extension',
+                      metavar='FILENAME')
+    parser.add_option('-n', '--no-test', dest='noTest',
+                      action='store_true', default=False,
+                      help='DO NOT run testing for agent')
+    parser.add_option('-t', '--train', dest='train',
+                      action='store_true', default=False,
+                      help='Train agent from scratch or using loaded values')
 
     options, otherjunk = parser.parse_args(argv)
     if len(otherjunk) != 0:
@@ -96,16 +108,15 @@ def readCommand(argv):
 
     if options.dictFile:
         values = readDictFile(options.dictFile)
-        valuesLoaded = True
-        tetroid = tetroidType(values=values)
+        tetroid = tetroidType(values=values, **agentOpts)
     else:
-        valuesLoaded = False
         tetroid = tetroidType(**agentOpts)
 
     args = dict()
     args['agent'] = tetroid
-    args['export'] = options.exportValues
-    args['valuesLoaded'] = valuesLoaded
+    args['exportFile'] = options.exportFile
+    args['noTest'] = options.noTest
+    args['train'] = options.train
     return args
 
 
