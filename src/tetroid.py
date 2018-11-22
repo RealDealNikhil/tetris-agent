@@ -18,20 +18,26 @@ def main():
 
     # train agent.
     if train:
+        episodesInfo = []
+        agent.startEpisode()
         while agent.isInTraining():
-            agent.startEpisode()
-            game.runGame(agent, inTesting=False)
-            if agent.shouldStopEpisode():
-                agent.stopEpisode()
-                averageRewards = agent.episodeRewards / agent.gamesInEpisode
-                print "TESTING GAMES UP TO " + str(agent.gamesInEpisode * agent.episodesSoFar)
-                print "Average Rewards for this set of episodes: " + str(averageRewards)
-                game.showTextScreen("Game Over")
+            game.runGame(agent, inTraining=True)
             agent.recordGame()
             print agent.gamesSoFar
+            if agent.shouldStopEpisode():
+                agent.stopEpisode()
+                averageRewards = agent.episodeRewards / agent.gamesPerEpisode
+                episodesInfo.append(
+                    "TESTING GAMES UP TO " + str(agent.gamesPerEpisode * agent.episodesSoFar) + "\t\t" +
+                    "Average Rewards for this set of episodes: " + str(averageRewards))
+                agent.startEpisode()
+
+        for episodeInfo in episodesInfo:
+            print episodeInfo
 
         if exportFile:
             writeToFile(exportFile, agent.q_values)
+
 
     # test agent
     if not noTest:
