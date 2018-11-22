@@ -23,7 +23,8 @@ def main():
         while agent.isInTraining():
             game.runGame(agent, inTraining=True)
             agent.recordGame()
-            print agent.gamesSoFar
+            if agent.gamesSoFar % 1000 == 0:
+                print agent.gamesSoFar
             if agent.shouldStopEpisode():
                 agent.stopEpisode()
                 averageRewards = agent.episodeRewards / agent.gamesPerEpisode
@@ -60,9 +61,9 @@ def readDictFile(fileName):
     return d
 
 
-def parseAgentArgs(str):
-    if str == None: return {}
-    pieces = str.split(',')
+def parseAgentArgs(args, willTrain):
+    if args == None: return {}
+    pieces = args.split(',')
     opts = {}
     for p in pieces:
         if '=' in p:
@@ -70,6 +71,11 @@ def parseAgentArgs(str):
         else:
             key,val = p, 1
         opts[key] = val
+
+    if not willTrain:
+        opts['epsilon'] = 0.0
+        opts['alpha'] = 0.0
+
     return opts
 
 
@@ -109,7 +115,7 @@ def readCommand(argv):
     if len(otherjunk) != 0:
         raise Exception('Command line input not understood: ' + str(otherjunk))
 
-    agentOpts = parseAgentArgs(options.agentArgs)
+    agentOpts = parseAgentArgs(options.agentArgs, options.train)
     tetroidType = loadAgent(options.agent)
 
     if options.dictFile:
