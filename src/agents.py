@@ -26,7 +26,7 @@ class QLearningAgent(Agent):
         self.gamesSoFar = 0
         self.episodeRewards = 0.0
         if values:
-            self.q_values = values
+            self.q_values = util.Counter(values)
         else:
             self.q_values = util.Counter()
 

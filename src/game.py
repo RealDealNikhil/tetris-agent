@@ -205,7 +205,7 @@ class Game:
             if observeTransition:
                 agent.observeTransition(prevState, prevAction, state, reward, legalActions)
 
-            # choose random action
+            # choose an action
             rotation, column = agent.getAction(state, legalActions)
 
             # set piece options based on action
