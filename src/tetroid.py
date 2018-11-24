@@ -13,6 +13,7 @@ def main():
     exportFile = args['exportFile']
     train = args['train']
     noTest = args['noTest']
+    progressTracker = args['progress']
 
     game = Game()
 
@@ -23,7 +24,7 @@ def main():
         while agent.isInTraining():
             game.runGame(agent, inTraining=True)
             agent.recordGame()
-            if agent.gamesSoFar % 1000 == 0:
+            if agent.gamesSoFar % progressTracker == 0:
                 print agent.gamesSoFar
             if agent.shouldStopEpisode():
                 agent.stopEpisode()
@@ -45,7 +46,6 @@ def main():
         while True:
             game.runGame(agent)
             game.showTextScreen("Game Over")
-
 
 
 def writeToFile(fileName, d):
@@ -110,6 +110,8 @@ def readCommand(argv):
     parser.add_option('-t', '--train', dest='train',
                       action='store_true', default=False,
                       help='Train agent from scratch or using loaded values')
+    parser.add_option('-p', '--progress', dest='progressTracker', default=1, type='int',
+                      help='Set the rate at which we show the completion of games')
 
     options, otherjunk = parser.parse_args(argv)
     if len(otherjunk) != 0:
@@ -129,6 +131,7 @@ def readCommand(argv):
     args['exportFile'] = options.exportFile
     args['noTest'] = options.noTest
     args['train'] = options.train
+    args['progress'] = options.progressTracker
     return args
 
 
