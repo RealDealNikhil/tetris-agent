@@ -16,11 +16,12 @@ class RandomAgent(Agent):
 
 
 class QLearningAgent(Agent):
-    def __init__(self, numTraining=10, gamesPerEpisode=10, epsilon=0.5, alpha=0.5, gamma=1, values=None):
+    def __init__(self, numTraining=10, numTesting=10, gamesPerEpisode=10, epsilon=0.5, alpha=0.5, gamma=1, values=None):
         self.epsilon = float(epsilon)
         self.alpha = float(alpha)
         self.discount = float(gamma)
         self.numTraining = int(numTraining)
+        self.numTesting = int(numTesting)
         self.gamesPerEpisode = int(gamesPerEpisode)
         self.episodesSoFar = 0
         self.gamesSoFar = 0
@@ -108,7 +109,7 @@ class QLearningAgent(Agent):
         return self.episodesSoFar < self.numTraining
 
     def isInTesting(self):
-        return not self.isInTraining()
+        return self.episodesSoFar < self.numTesting
 
     def startEpisode(self):
         """
@@ -127,16 +128,19 @@ class QLearningAgent(Agent):
           Called by environment when episode is done
         """
         self.episodesSoFar += 1
-        if self.episodesSoFar >= self.numTraining:
-            # Take off the training wheels
-            self.epsilon = 0.0    # no exploration
-            self.alpha = 0.0      # no learning
 
     def recordGame(self):
         """
         Called by environment to record that we have just finished playing a game of tetris.
         """
         self.gamesSoFar += 1
+
+    def endTraining(self):
+        # Take off the training wheels
+        self.epsilon = 0.0    # no exploration
+        self.alpha = 0.0      # no learning
+        self.episodesSoFar = 0
+        self.gamesSoFar = 0
 
 class ApproxQLearningAgent:
     def __init__():

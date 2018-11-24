@@ -12,40 +12,69 @@ def main():
     agent = args['agent']
     exportFile = args['exportFile']
     train = args['train']
-    noTest = args['noTest']
+    test = args['test']
     progressTracker = args['progress']
+    play = args['play']
 
     game = Game()
 
+    trainingInfo = None
+    testingInfo = None
+
     # train agent.
     if train:
-        episodesInfo = []
-        agent.startEpisode()
-        while agent.isInTraining():
-            game.runGame(agent, inTraining=True)
-            agent.recordGame()
-            if agent.gamesSoFar % progressTracker == 0:
-                print agent.gamesSoFar
-            if agent.shouldStopEpisode():
-                agent.stopEpisode()
-                averageRewards = agent.episodeRewards / agent.gamesPerEpisode
-                episodesInfo.append(
-                    "TESTING GAMES UP TO " + str(agent.gamesPerEpisode * agent.episodesSoFar) + "\t\t" +
-                    "Average Rewards for this set of episodes: " + str(averageRewards))
-                agent.startEpisode()
-
-        for episodeInfo in episodesInfo:
-            print episodeInfo
+        trainingInfo = runEpisodes(game, agent, progressTracker, True)
 
         if exportFile:
             writeToFile(exportFile, agent.q_values)
 
+        agent.endTraining()
+
 
     # test agent
-    if not noTest:
+    if test:
+        testingInfo = runEpisodes(game, agent, progressTracker, False)
+
+    printList(trainingInfo)
+    printList(testingInfo)
+
+    if play:
         while True:
             game.runGame(agent)
             game.showTextScreen("Game Over")
+
+
+def runEpisodes(game, agent, progressTracker, inTraining):
+    episodesInfo = []
+    agent.startEpisode()
+    if inTraining:
+        check = agent.isInTraining
+        infoString = "TRAINING"
+    else:
+        check = agent.isInTesting
+        infoString = "TESTING"
+    while check():
+        game.runGame(agent, auto=True)
+        agent.recordGame()
+        if agent.gamesSoFar % progressTracker == 0:
+            print agent.gamesSoFar
+        if agent.shouldStopEpisode():
+            agent.stopEpisode()
+            averageRewards = agent.episodeRewards / agent.gamesPerEpisode
+            gameSet = str(agent.gamesSoFar - agent.gamesPerEpisode) + "-" + str(agent.gamesSoFar)
+            episodesInfo.append(
+                infoString + " GAMES " + gameSet + "\t\t" +
+                "Average Rewards for this set of episodes: " + str(averageRewards))
+            agent.startEpisode()
+    return episodesInfo
+
+
+def printList(l):
+    try:
+        for el in l:
+            print el
+    except TypeError:
+        pass
 
 
 def writeToFile(fileName, d):
@@ -104,14 +133,17 @@ def readCommand(argv):
     parser.add_option('-l', '--load', dest='dictFile',
                       help='Read in a dictionary from ../values/FILENAME. Do not include filename extension',
                       metavar='FILENAME')
-    parser.add_option('-n', '--no-test', dest='noTest',
+    parser.add_option('--test', dest='test',
                       action='store_true', default=False,
-                      help='DO NOT run testing for agent')
-    parser.add_option('-t', '--train', dest='train',
+                      help='Test agent')
+    parser.add_option('--train', dest='train',
                       action='store_true', default=False,
                       help='Train agent from scratch or using loaded values')
     parser.add_option('-p', '--progress', dest='progressTracker', default=1, type='int',
                       help='Set the rate at which we show the completion of games')
+    parser.add_option('-n', '--no-play', dest='play',
+                      action='store_false', default=True,
+                      help='DO NOT play game')
 
     options, otherjunk = parser.parse_args(argv)
     if len(otherjunk) != 0:
@@ -129,9 +161,10 @@ def readCommand(argv):
     args = dict()
     args['agent'] = tetroid
     args['exportFile'] = options.exportFile
-    args['noTest'] = options.noTest
+    args['test'] = options.test
     args['train'] = options.train
     args['progress'] = options.progressTracker
+    args['play'] = options.play
     return args
 
 

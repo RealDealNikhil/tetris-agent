@@ -174,7 +174,7 @@ class Game:
         self.showTextScreen('Tetroid')
 
 
-    def runGame(self, agent, inTraining=False):
+    def runGame(self, agent, auto=False):
         # setup variables for the start of the game
         board = self.getBlankBoard()
         score = 0
@@ -224,7 +224,7 @@ class Game:
             self.addToBoard(board, fallingPiece)
 
             # draw interim board if in testing so we can see what's happening
-            if not inTraining:
+            if not auto:
                 self.drawBoard(board)
                 while self.checkForKeyPress() == None:
                     pygame.display.update()
@@ -240,7 +240,7 @@ class Game:
             self.drawStatus(score)
             self.drawNextPiece(nextPiece)
 
-            if not inTraining:
+            if not auto:
                 while self.checkForKeyPress() == None:
                     pygame.display.update()
 
