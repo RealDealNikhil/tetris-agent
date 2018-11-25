@@ -1,5 +1,6 @@
 # contains random agent, qlearning agent, approximate qlearning agent
 import random, util
+from featureExtractor import *
 
 class RLAgent:
     def __init__(self, numTraining=10, numTesting=10, gamesPerEpisode=10, epsilon=0.5, alpha=0.5, gamma=1, values=None):
@@ -16,6 +17,9 @@ class RLAgent:
 
     def update(self, state, action, nextState, reward, legalActions):
         pass
+
+    def stateExtractor(self, board, currentPiece, nextPiece):
+        return (board, currentPiece, nextPiece)
 
     def observeTransition(self, state, action, nextState, reward, legalActions):
         self.episodeRewards += reward
@@ -145,33 +149,62 @@ class QLearningAgent(RLAgent):
     def getValue(self, state, legalActions):
         return self.computeValueFromQValues(state, legalActions)
 
+    def stateExtractor(self, board, currentPiece, nextPiece):
+        topLine = self.getTopLine(board)
+        return (topLine, currentPiece, nextPiece)
 
-# class ApproximateQAgent(QLearningAgent):
-    # def __init__(self, extractor='IdentityExtractor', **args):
-        # # self.featExtractor = util.lookup(extractor, globals())()
-        # QLearningAgent.__init__(self, **args)
+    def getTopLine(self, board):
+        topLine = []
+        for col in range(BOARDWIDTH):
+            blockFound = False
+            for row in range(BOARDHEIGHT):
+                if board[col][row] != BLANK:
+                    topLine.append((row - 1, col))
+                    blockFound = True
+                    break
+            if not blockFound:
+                topLine.append((row, col))
+        return tuple(self.normalize(topLine))
 
-    # def setValues(self):
-        # if self.values:
-            # self.weights = util.Counter(self.values)
-        # else:
-            # self.weights = util.Counter()
+    # normalize topLine adjust rows so that lowest rows become row (BOARDHEIGHT - 1), offset higher rows by this amount
+    # columns are absolute. Do not adjust those.
+    def normalize(self, topLine):
+        highest = max(topLine, key=lambda i: i[0])[0]
+        offset = BOARDHEIGHT - 1 - highest
+        if offset == 0:
+            return topLine
+        newTopLine = []
+        for pair in topLine:
+            newTopLine.append((pair[0] + offset, pair[1]))
+        return newTopLine
 
-    # def getWeights(self):
-        # return self.weights
 
-    # def getQValue(self, state, action):
-        # """
-          # Should return Q(state,action) = w * featureVector
-          # where * is the dotProduct operator
-        # """
-        # return self.getWeights() * self.featExtractor.getFeatures(state, action)
+class ApproximateQAgent(QLearningAgent):
+    def __init__(self, **args):
+        self.featExtractor = Extractor()
+        QLearningAgent.__init__(self, **args)
 
-    # def update(self, state, action, nextState, reward):
-        # """
-           # Should update your weights based on transition
-        # """
-        # features = self.featExtractor.getFeatures(state, action)
-        # difference = self.alpha * (reward + self.discount * self.computeValueFromQValues(nextState) - self.getQValue(state, action))
-        # for i in features:
-            # self.weights[i] += difference * features[i]
+    def setValues(self):
+        if self.values:
+            self.weights = util.Counter(self.values)
+        else:
+            self.weights = util.Counter()
+
+    def getWeights(self):
+        return self.weights
+
+    def getQValue(self, state, action):
+        """
+          Should return Q(state,action) = w * featureVector
+          where * is the dotProduct operator
+        """
+        return self.getWeights() * self.featExtractor.getFeatures(state, action)
+
+    def update(self, state, action, nextState, reward):
+        """
+           Should update your weights based on transition
+        """
+        features = self.featExtractor.getFeatures(state, action)
+        difference = self.alpha * (reward + self.discount * self.computeValueFromQValues(nextState) - self.getQValue(state, action))
+        for i in features:
+            self.weights[i] += difference * features[i]

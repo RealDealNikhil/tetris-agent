@@ -185,7 +185,7 @@ class Game:
 
         while True: # game loop
             if fallingPiece != None:
-                prevState = (topLine, fallingPiece['shape'], nextPiece['shape'])
+                prevState = state
                 prevAction = (rotation, column)
                 observeTransition = True
 
@@ -198,10 +198,8 @@ class Game:
             if len(legalActions) == 0:
                 return
 
-            topLine = self.getTopLine(board)
-
             # observe state change
-            state = (topLine, fallingPiece['shape'], nextPiece['shape'])
+            state = agent.stateExtractor(board, fallingPiece['shape'], nextPiece['shape'])
             if observeTransition:
                 agent.observeTransition(prevState, prevAction, state, reward, legalActions)
 
@@ -325,31 +323,6 @@ class Game:
     def isOnBoard(self, x, y):
         return x >= 0 and x < BOARDWIDTH and y < BOARDHEIGHT
 
-
-    def getTopLine(self, board):
-        topLine = []
-        for col in range(BOARDWIDTH):
-            blockFound = False
-            for row in range(BOARDHEIGHT):
-                if board[col][row] != BLANK:
-                    topLine.append((row - 1, col))
-                    blockFound = True
-                    break
-            if not blockFound:
-                topLine.append((row, col))
-        return tuple(self.normalize(topLine))
-
-    # normalize topLine adjust rows so that lowest rows become row (BOARDHEIGHT - 1), offset higher rows by this amount
-    # columns are absolute. Do not adjust those.
-    def normalize(self, topLine):
-        highest = max(topLine, key=lambda i: i[0])[0]
-        offset = BOARDHEIGHT - 1 - highest
-        if offset == 0:
-            return topLine
-        newTopLine = []
-        for pair in topLine:
-            newTopLine.append((pair[0] + offset, pair[1]))
-        return newTopLine
 
     # for every rotation, check which columns we can drop the piece down
     def getLegalActions(self, board, piece):
