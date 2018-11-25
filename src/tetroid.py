@@ -15,8 +15,9 @@ def main():
     test = args['test']
     progressTracker = args['progress']
     play = args['play']
+    boardWidth, boardHeight = map(lambda i: int(i), args['board'])
 
-    game = Game()
+    game = Game(boardWidth, boardHeight)
 
     trainingInfo = None
     testingInfo = None
@@ -144,6 +145,8 @@ def readCommand(argv):
     parser.add_option('-n', '--no-play', dest='play',
                       action='store_false', default=True,
                       help='DO NOT play game')
+    parser.add_option('-b', '--board', dest=board_dim,
+                      default='10x20', help='Set board dimensions. Given as WIDTHxHEIGHT')
 
     options, otherjunk = parser.parse_args(argv)
     if len(otherjunk) != 0:
@@ -158,6 +161,10 @@ def readCommand(argv):
     else:
         tetroid = tetroidType(**agentOpts)
 
+    board_dim = options.board_dim.split('x')
+    if len(board_dim) != 2:
+        raise Exception('Invalid board dimensions. Dimensions should be given as WIDTHxHEIGHT')
+
     args = dict()
     args['agent'] = tetroid
     args['exportFile'] = options.exportFile
@@ -165,6 +172,7 @@ def readCommand(argv):
     args['train'] = options.train
     args['progress'] = options.progressTracker
     args['play'] = options.play
+    args['board'] = board_dim
     return args
 
 

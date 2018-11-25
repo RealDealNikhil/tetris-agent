@@ -4,167 +4,19 @@
 # Released under a "Simplified BSD" license
 
 import random, time, pygame, sys, copy
+from config import *
+from board import *
+from pieceGenerator import *
 from pygame.locals import *
 
-FPS = 25
-WINDOWWIDTH = 640
-WINDOWHEIGHT = 480
-BOXSIZE = 20
-BOARDWIDTH = 5
-BOARDHEIGHT = 8
-BLANK = '.'
-
-MOVESIDEWAYSFREQ = 0.15
-MOVEDOWNFREQ = 0.1
-
-XMARGIN = int((WINDOWWIDTH - BOARDWIDTH * BOXSIZE) / 2)
-TOPMARGIN = WINDOWHEIGHT - (BOARDHEIGHT * BOXSIZE) - 5
-
-#               R    G    B
-WHITE       = (255, 255, 255)
-GRAY        = (185, 185, 185)
-BLACK       = (  0,   0,   0)
-RED         = (155,   0,   0)
-LIGHTRED    = (175,  20,  20)
-GREEN       = (  0, 155,   0)
-LIGHTGREEN  = ( 20, 175,  20)
-BLUE        = (  0,   0, 155)
-LIGHTBLUE   = ( 20,  20, 175)
-YELLOW      = (155, 155,   0)
-LIGHTYELLOW = (175, 175,  20)
-
-BORDERCOLOR = BLUE
-BGCOLOR = BLACK
-TEXTCOLOR = WHITE
-TEXTSHADOWCOLOR = GRAY
-COLORS      = (     BLUE,      GREEN,      RED,      YELLOW)
-LIGHTCOLORS = (LIGHTBLUE, LIGHTGREEN, LIGHTRED, LIGHTYELLOW)
-assert len(COLORS) == len(LIGHTCOLORS) # each color must have light color
-
-TEMPLATEWIDTH = 5
-TEMPLATEHEIGHT = 5
-
-S_SHAPE_TEMPLATE = [['.....',
-                     '.....',
-                     '..OO.',
-                     '.OO..',
-                     '.....'],
-                    ['.....',
-                     '..O..',
-                     '..OO.',
-                     '...O.',
-                     '.....']]
-
-Z_SHAPE_TEMPLATE = [['.....',
-                     '.....',
-                     '.OO..',
-                     '..OO.',
-                     '.....'],
-                    ['.....',
-                     '..O..',
-                     '.OO..',
-                     '.O...',
-                     '.....']]
-
-I_SHAPE_TEMPLATE = [['..O..',
-                     '..O..',
-                     '..O..',
-                     '..O..',
-                     '.....'],
-                    ['.....',
-                     '.....',
-                     'OOOO.',
-                     '.....',
-                     '.....']]
-
-O_SHAPE_TEMPLATE = [['.....',
-                     '.....',
-                     '.OO..',
-                     '.OO..',
-                     '.....']]
-
-J_SHAPE_TEMPLATE = [['.....',
-                     '.O...',
-                     '.OOO.',
-                     '.....',
-                     '.....'],
-                    ['.....',
-                     '..OO.',
-                     '..O..',
-                     '..O..',
-                     '.....'],
-                    ['.....',
-                     '.....',
-                     '.OOO.',
-                     '...O.',
-                     '.....'],
-                    ['.....',
-                     '..O..',
-                     '..O..',
-                     '.OO..',
-                     '.....']]
-
-L_SHAPE_TEMPLATE = [['.....',
-                     '...O.',
-                     '.OOO.',
-                     '.....',
-                     '.....'],
-                    ['.....',
-                     '..O..',
-                     '..O..',
-                     '..OO.',
-                     '.....'],
-                    ['.....',
-                     '.....',
-                     '.OOO.',
-                     '.O...',
-                     '.....'],
-                    ['.....',
-                     '.OO..',
-                     '..O..',
-                     '..O..',
-                     '.....']]
-
-T_SHAPE_TEMPLATE = [['.....',
-                     '..O..',
-                     '.OOO.',
-                     '.....',
-                     '.....'],
-                    ['.....',
-                     '..O..',
-                     '..OO.',
-                     '..O..',
-                     '.....'],
-                    ['.....',
-                     '.....',
-                     '.OOO.',
-                     '..O..',
-                     '.....'],
-                    ['.....',
-                     '..O..',
-                     '.OO..',
-                     '..O..',
-                     '.....']]
-
-PIECES = {'S': S_SHAPE_TEMPLATE,
-          'Z': Z_SHAPE_TEMPLATE,
-          'J': J_SHAPE_TEMPLATE,
-          'L': L_SHAPE_TEMPLATE,
-          'I': I_SHAPE_TEMPLATE,
-          'O': O_SHAPE_TEMPLATE,
-          'T': T_SHAPE_TEMPLATE}
-
-# offsets given as (x_left, x_right, y_top)
-OFFSETS = {'S': [(1, 1, 2), (2, 1, 1)],
-          'Z': [(1, 1, 2), (1, 2, 1)],
-          'I': [(2, 2 ,0), (0, 1, 2)],
-          'O': [(1, 2, 2)],
-          'J': [(1, 1, 1), (2, 1, 1), (1, 1, 2), (1, 2, 1)],
-          'L': [(1, 1, 1), (2, 1, 1), (1, 1, 2), (1, 2, 1)],
-          'T': [(1, 1, 1), (2, 1, 1), (1, 1, 2), (1, 2, 1)]}
 
 class Game:
-    def __init__(self):
+    def __init__(self, boardWidth, boardHeight):
+        self.BOARDWIDTH = boardWidth
+        self.BOARDHEIGHT = boardHeight
+        self.XMARGIN = int((WINDOWWIDTH - BOARDWIDTH * BOXSIZE) / 2)
+        self.TOPMARGIN = WINDOWHEIGHT - (BOARDHEIGHT * BOXSIZE) - 5
+
         pygame.init()
         self.DISPLAYSURF = pygame.display.set_mode((WINDOWWIDTH, WINDOWHEIGHT))
         self.BASICFONT = pygame.font.Font('freesansbold.ttf', 18)
@@ -176,11 +28,12 @@ class Game:
 
     def runGame(self, agent, auto=False):
         # setup variables for the start of the game
-        board = self.getBlankBoard()
+        board = Board(self.BOARDWIDTH, self.BOARDHEIGHT)
+        generator = PieceGenerator()
         score = 0
 
         fallingPiece = None
-        nextPiece = self.getNewPiece()
+        nextPiece = generator.genRandPiece()
         observeTransition = False
 
         while True: # game loop
@@ -191,15 +44,15 @@ class Game:
 
             # get falling piece
             fallingPiece = nextPiece
-            nextPiece = self.getNewPiece()
+            nextPiece = generator.genRandPiece()
 
             # get all actions for falling piece on board
-            legalActions = self.getLegalActions(board, fallingPiece)
+            legalActions = board.getLegalActions(fallingPiece)
             if len(legalActions) == 0:
                 return
 
             # observe state change
-            state = agent.stateExtractor(board, fallingPiece['shape'], nextPiece['shape'])
+            state = agent.stateExtractor(board.board, fallingPiece.shape, nextPiece.shape)
             if observeTransition:
                 agent.observeTransition(prevState, prevAction, state, reward, legalActions)
 
@@ -207,34 +60,34 @@ class Game:
             rotation, column = agent.getAction(state, legalActions)
 
             # set piece options based on action
-            fallingPiece['rotation'] = rotation
-            fallingPiece['x'] = column
+            fallingPiece.setRotation(rotation)
+            fallingPiece.setX(column)
 
             # start piece at very top of board
-            fallingPiece['y'] = 0 - OFFSETS[fallingPiece['shape']][rotation][2]
+            fallingPiece.setY(0)
 
             # drop piece in column
             i = 0
-            while self.isValidPosition(board, fallingPiece, adjY=i):
+            while board.isValidPosition(fallingPiece, adjY=i):
                 i += 1
-            fallingPiece['y'] += i - 1
+            fallingPiece.setY(i - 1)
 
-            self.addToBoard(board, fallingPiece)
+            board.addToBoard(fallingPiece)
 
             # draw interim board if in testing so we can see what's happening
             if not auto:
-                self.drawBoard(board)
+                self.drawBoard(board.board)
                 while self.checkForKeyPress() == None:
                     pygame.display.update()
 
             # reward function
-            reward = self.getReward(board)
+            reward = board.getReward()
             score += reward
 
             self.checkForQuit()
             # drawing everything on the screen
             self.DISPLAYSURF.fill(BGCOLOR)
-            self.drawBoard(board)
+            self.drawBoard(board.board)
             self.drawStatus(score)
             self.drawNextPiece(nextPiece)
 
@@ -295,106 +148,11 @@ class Game:
                 self.terminate() # terminate if the KEYUP event was for the Esc key
             pygame.event.post(event) # put the other KEYUP event objects back
 
-    def getNewPiece(self):
-        # return a random new piece in a random rotation and color
-        shape = random.choice(list(PIECES.keys()))
-        newPiece = {'shape': shape,
-                    'rotation': 0,
-                    'color': random.randint(0, len(COLORS)-1)}
-        return newPiece
-
-
-    def addToBoard(self, board, piece):
-        # fill in the board based on piece's location, shape, and rotation
-        for x in range(TEMPLATEWIDTH):
-            for y in range(TEMPLATEHEIGHT):
-                if PIECES[piece['shape']][piece['rotation']][y][x] != BLANK:
-                    board[x + piece['x']][y + piece['y']] = piece['color']
-
-
-    def getBlankBoard(self):
-        # create and return a new blank board data structure
-        board = []
-        for i in range(BOARDWIDTH):
-            board.append([BLANK] * BOARDHEIGHT)
-        return board
-
-
-    def isOnBoard(self, x, y):
-        return x >= 0 and x < BOARDWIDTH and y < BOARDHEIGHT
-
-
-    # for every rotation, check which columns we can drop the piece down
-    def getLegalActions(self, board, piece):
-        actions = []
-        for rotation in range(len(PIECES[piece['shape']])):
-            xLOffset, xROffset, yOffset = OFFSETS[piece['shape']][rotation]
-            testPiece = copy.deepcopy(piece)
-            testPiece['rotation'] = rotation
-            testPiece['y'] = 0 - yOffset
-            for x in range(0 - xLOffset, BOARDWIDTH):
-                testPiece['x'] = x
-                if not self.isValidPosition(board, testPiece):
-                    continue
-                actions.append((rotation, testPiece['x']))
-        return actions
-
-
-    def isValidPosition(self, board, piece, adjX=0, adjY=0):
-        # Return True if the piece is within the board and not colliding
-        for x in range(TEMPLATEWIDTH):
-            for y in range(TEMPLATEHEIGHT):
-                isAboveBoard = y + piece['y'] + adjY < 0
-                if isAboveBoard or PIECES[piece['shape']][piece['rotation']][y][x] == BLANK:
-                    continue
-                if not self.isOnBoard(x + piece['x'] + adjX, y + piece['y'] + adjY):
-                    return False
-                if board[x + piece['x'] + adjX][y + piece['y'] + adjY] != BLANK:
-                    return False
-        return True
-
-    def isCompleteLine(self, board, y):
-        # Return True if the line filled with boxes with no gaps.
-        for x in range(BOARDWIDTH):
-            if board[x][y] == BLANK:
-                return False
-        return True
-
-
-    def removeCompleteLines(self, board):
-        # Remove any completed lines on the board, move everything above them down, and return the number of complete lines.
-        numLinesRemoved = 0
-        y = BOARDHEIGHT - 1 # start y at the bottom of the board
-        while y >= 0:
-            if self.isCompleteLine(board, y):
-                # Remove the line and pull boxes down by one line.
-                for pullDownY in range(y, 0, -1):
-                    for x in range(BOARDWIDTH):
-                        board[x][pullDownY] = board[x][pullDownY-1]
-                # Set very top line to blank.
-                for x in range(BOARDWIDTH):
-                    board[x][0] = BLANK
-                numLinesRemoved += 1
-                # Note on the next iteration of the loop, y is the same.
-                # This is so that if the line that was pulled down is also
-                # complete, it will be removed.
-            else:
-                y -= 1 # move on to check next row up
-        return numLinesRemoved
-
-
-    def getReward(self, board):
-        numLinesRemoved = self.removeCompleteLines(board)
-        if numLinesRemoved == 0:
-            return -1
-        return 1000 * numLinesRemoved
-
 
     def convertToPixelCoords(self, boxx, boxy):
         # Convert the given xy coordinates of the board to xy
         # coordinates of the location on the screen.
         return (XMARGIN + (boxx * BOXSIZE)), (TOPMARGIN + (boxy * BOXSIZE))
-
 
     def drawBox(self, boxx, boxy, color, pixelx=None, pixely=None):
         # draw a single box (each tetromino piece has four boxes)
@@ -408,10 +166,9 @@ class Game:
         pygame.draw.rect(self.DISPLAYSURF, COLORS[color], (pixelx + 1, pixely + 1, BOXSIZE - 1, BOXSIZE - 1))
         pygame.draw.rect(self.DISPLAYSURF, LIGHTCOLORS[color], (pixelx + 1, pixely + 1, BOXSIZE - 4, BOXSIZE - 4))
 
-
     def drawBoard(self, board):
         # draw the border around the board
-        pygame.draw.rect(self.DISPLAYSURF, BORDERCOLOR, (XMARGIN - 3, TOPMARGIN - 7, (BOARDWIDTH * BOXSIZE) + 8, (BOARDHEIGHT * BOXSIZE) + 8), 5)
+        pygame.draw.rect(self.DISPLAYSURF, BORDERCOLOR, (XMARGIN - 3, TOPMARGIN - 7, (self.BOARDWIDTH * BOXSIZE) + 8, (self.BOARDHEIGHT * BOXSIZE) + 8), 5)
 
         # fill the background of the board
         pygame.draw.rect(self.DISPLAYSURF, BGCOLOR, (XMARGIN, TOPMARGIN, BOXSIZE * BOARDWIDTH, BOXSIZE * BOARDHEIGHT))
@@ -420,14 +177,12 @@ class Game:
             for y in range(BOARDHEIGHT):
                 self.drawBox(x, y, board[x][y])
 
-
     def drawStatus(self, score):
         # draw the score text
         scoreSurf = self.BASICFONT.render('Score: %s' % score, True, TEXTCOLOR)
         scoreRect = scoreSurf.get_rect()
         scoreRect.topleft = (WINDOWWIDTH - 150, 20)
         self.DISPLAYSURF.blit(scoreSurf, scoreRect)
-
 
     def drawPiece(self, piece, pixelx=None, pixely=None):
         shapeToDraw = PIECES[piece['shape']][piece['rotation']]
@@ -440,7 +195,6 @@ class Game:
             for y in range(TEMPLATEHEIGHT):
                 if shapeToDraw[y][x] != BLANK:
                     self.drawBox(None, None, piece['color'], pixelx + (x * BOXSIZE), pixely + (y * BOXSIZE))
-
 
     def drawNextPiece(self, piece):
         # draw the "next" text
