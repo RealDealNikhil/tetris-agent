@@ -106,7 +106,7 @@ class PieceGenerator:
                              '..O..',
                              '.....']]
 
-        self.PIECES = {
+        self.pieces = {
                 'S': S_SHAPE_TEMPLATE,
                 'Z': Z_SHAPE_TEMPLATE,
                 'J': J_SHAPE_TEMPLATE,
@@ -117,7 +117,7 @@ class PieceGenerator:
             }
 
         # offsets given as (x_left, x_right, y_top)
-        self.OFFSETS = {
+        self.offsets = {
                 'S': [(1, 1, 2), (2, 1, 1)],
                 'Z': [(1, 1, 2), (1, 2, 1)],
                 'I': [(2, 2 ,0), (0, 1, 2)],
@@ -130,12 +130,12 @@ class PieceGenerator:
     # generate a specific piece
     def genPiece(self, shape, rotation):
         color = random.randint(0, len(COLORS) - 1)
-        templates = self.PIECES[shape]
-        offsets = self.OFFSETS[shape]
+        templates = self.pieces[shape]
+        offsets = self.offsets[shape]
         return Piece(shape, rotation, color, templates, offsets)
 
     # generate random piece
     def genRandPiece(self):
-        shape = random.choice(list(self.PIECES.keys()))
+        shape = random.choice(list(self.pieces.keys()))
         rotation = 0
         return self.genPiece(shape, rotation)
