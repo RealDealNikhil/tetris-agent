@@ -20,7 +20,7 @@ class Board:
         actions = []
         rotations = piece.getRotations()
         for r in range(rotations):
-            testPiece = generator.genPiece(piece.shape, r, piece.color)
+            testPiece = self.generator.genPiece(piece.shape, r)
             xLOffset, xROffset, yOffset = testPiece.getOffsets()
             testPiece.setY(0)
             for x in range(0 - xLOffset, self.width):
@@ -65,15 +65,15 @@ class Board:
     def removeCompleteLines(self):
         # Remove any completed lines on the board, move everything above them down, and return the number of complete lines.
         numLinesRemoved = 0
-        y = board.height - 1 # start y at the bottom of the board
+        y = self.height - 1 # start y at the bottom of the board
         while y >= 0:
             if self.isCompleteLine(y):
                 # Remove the line and pull boxes down by one line.
                 for pullDownY in range(y, 0, -1):
-                    for x in range(board.width):
+                    for x in range(self.width):
                         self.board[x][pullDownY] = self.board[x][pullDownY-1]
                 # Set very top line to blank.
-                for x in range(board.width):
+                for x in range(self.width):
                     self.board[x][0] = BLANK
                 numLinesRemoved += 1
                 # Note on the next iteration of the loop, y is the same.
@@ -84,7 +84,7 @@ class Board:
         return numLinesRemoved
 
     def getReward(self):
-        numLinesRemoved = self.removeCompleteLines(board)
+        numLinesRemoved = self.removeCompleteLines()
         if numLinesRemoved == 0:
             return -1
         return 1000 * numLinesRemoved

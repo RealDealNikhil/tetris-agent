@@ -14,8 +14,8 @@ class Game:
     def __init__(self, boardWidth, boardHeight):
         self.BOARDWIDTH = boardWidth
         self.BOARDHEIGHT = boardHeight
-        self.XMARGIN = int((WINDOWWIDTH - BOARDWIDTH * BOXSIZE) / 2)
-        self.TOPMARGIN = WINDOWHEIGHT - (BOARDHEIGHT * BOXSIZE) - 5
+        self.XMARGIN = int((WINDOWWIDTH - self.BOARDWIDTH * BOXSIZE) / 2)
+        self.TOPMARGIN = WINDOWHEIGHT - (self.BOARDHEIGHT * BOXSIZE) - 5
 
         pygame.init()
         self.DISPLAYSURF = pygame.display.set_mode((WINDOWWIDTH, WINDOWHEIGHT))
@@ -24,7 +24,6 @@ class Game:
         pygame.display.set_caption('Tetromino')
 
         self.showTextScreen('Tetroid')
-
 
     def runGame(self, agent, auto=False):
         # setup variables for the start of the game
@@ -52,7 +51,7 @@ class Game:
                 return
 
             # observe state change
-            state = agent.stateExtractor(board.board, fallingPiece.shape, nextPiece.shape)
+            state = agent.stateExtractor(board, fallingPiece, nextPiece)
             if observeTransition:
                 agent.observeTransition(prevState, prevAction, state, reward, legalActions)
 
@@ -95,16 +94,13 @@ class Game:
                 while self.checkForKeyPress() == None:
                     pygame.display.update()
 
-
     def makeTextObjs(self, text, font, color):
         surf = font.render(text, True, color)
         return surf, surf.get_rect()
 
-
     def terminate(self):
         pygame.quit()
         sys.exit()
-
 
     def checkForKeyPress(self):
         # Go through event queue looking for a KEYUP event.
@@ -116,7 +112,6 @@ class Game:
                 continue
             return event.key
         return None
-
 
     def showTextScreen(self, text):
         # This function displays large text in the
@@ -139,7 +134,6 @@ class Game:
         while self.checkForKeyPress() == None:
             pygame.display.update()
 
-
     def checkForQuit(self):
         for event in pygame.event.get(QUIT): # get all the QUIT events
             self.terminate() # terminate if any QUIT events are present
@@ -148,11 +142,10 @@ class Game:
                 self.terminate() # terminate if the KEYUP event was for the Esc key
             pygame.event.post(event) # put the other KEYUP event objects back
 
-
     def convertToPixelCoords(self, boxx, boxy):
         # Convert the given xy coordinates of the board to xy
         # coordinates of the location on the screen.
-        return (XMARGIN + (boxx * BOXSIZE)), (TOPMARGIN + (boxy * BOXSIZE))
+        return (self.XMARGIN + (boxx * BOXSIZE)), (self.TOPMARGIN + (boxy * BOXSIZE))
 
     def drawBox(self, boxx, boxy, color, pixelx=None, pixely=None):
         # draw a single box (each tetromino piece has four boxes)
@@ -168,13 +161,13 @@ class Game:
 
     def drawBoard(self, board):
         # draw the border around the board
-        pygame.draw.rect(self.DISPLAYSURF, BORDERCOLOR, (XMARGIN - 3, TOPMARGIN - 7, (self.BOARDWIDTH * BOXSIZE) + 8, (self.BOARDHEIGHT * BOXSIZE) + 8), 5)
+        pygame.draw.rect(self.DISPLAYSURF, BORDERCOLOR, (self.XMARGIN - 3, self.TOPMARGIN - 7, (self.BOARDWIDTH * BOXSIZE) + 8, (self.BOARDHEIGHT * BOXSIZE) + 8), 5)
 
         # fill the background of the board
-        pygame.draw.rect(self.DISPLAYSURF, BGCOLOR, (XMARGIN, TOPMARGIN, BOXSIZE * BOARDWIDTH, BOXSIZE * BOARDHEIGHT))
+        pygame.draw.rect(self.DISPLAYSURF, BGCOLOR, (self.XMARGIN, self.TOPMARGIN, BOXSIZE * self.BOARDWIDTH, BOXSIZE * self.BOARDHEIGHT))
         # draw the individual boxes on the board
-        for x in range(BOARDWIDTH):
-            for y in range(BOARDHEIGHT):
+        for x in range(self.BOARDWIDTH):
+            for y in range(self.BOARDHEIGHT):
                 self.drawBox(x, y, board[x][y])
 
     def drawStatus(self, score):
@@ -185,16 +178,16 @@ class Game:
         self.DISPLAYSURF.blit(scoreSurf, scoreRect)
 
     def drawPiece(self, piece, pixelx=None, pixely=None):
-        shapeToDraw = PIECES[piece['shape']][piece['rotation']]
+        shapeToDraw = piece.getTemplate()
         if pixelx == None and pixely == None:
             # if pixelx & pixely hasn't been specified, use the location stored in the piece data structure
-            pixelx, pixely = self.convertToPixelCoords(piece['x'], piece['y'])
+            pixelx, pixely = self.convertToPixelCoords(piece.x, piece.y)
 
         # draw each of the boxes that make up the piece
         for x in range(TEMPLATEWIDTH):
             for y in range(TEMPLATEHEIGHT):
                 if shapeToDraw[y][x] != BLANK:
-                    self.drawBox(None, None, piece['color'], pixelx + (x * BOXSIZE), pixely + (y * BOXSIZE))
+                    self.drawBox(None, None, piece.color, pixelx + (x * BOXSIZE), pixely + (y * BOXSIZE))
 
     def drawNextPiece(self, piece):
         # draw the "next" text

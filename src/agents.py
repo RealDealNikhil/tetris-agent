@@ -1,5 +1,6 @@
 # contains random agent, qlearning agent, approximate qlearning agent
 import random, util
+from config import *
 from featureExtractor import *
 
 class RLAgent:
@@ -19,7 +20,7 @@ class RLAgent:
         pass
 
     def stateExtractor(self, board, currentPiece, nextPiece):
-        return (board, currentPiece, nextPiece)
+        return (board.board, currentPiece.shape, nextPiece.shape)
 
     def observeTransition(self, state, action, nextState, reward, legalActions):
         self.episodeRewards += reward
@@ -151,26 +152,26 @@ class QLearningAgent(RLAgent):
 
     def stateExtractor(self, board, currentPiece, nextPiece):
         topLine = self.getTopLine(board)
-        return (topLine, currentPiece, nextPiece)
+        return (topLine, currentPiece.shape, nextPiece.shape)
 
     def getTopLine(self, board):
         topLine = []
-        for col in range(BOARDWIDTH):
+        for col in range(board.width):
             blockFound = False
-            for row in range(BOARDHEIGHT):
-                if board[col][row] != BLANK:
+            for row in range(board.height):
+                if board.board[col][row] != BLANK:
                     topLine.append((row - 1, col))
                     blockFound = True
                     break
             if not blockFound:
                 topLine.append((row, col))
-        return tuple(self.normalize(topLine))
+        return tuple(self.normalize(topLine, board.height))
 
     # normalize topLine adjust rows so that lowest rows become row (BOARDHEIGHT - 1), offset higher rows by this amount
     # columns are absolute. Do not adjust those.
-    def normalize(self, topLine):
+    def normalize(self, topLine, boardHeight):
         highest = max(topLine, key=lambda i: i[0])[0]
-        offset = BOARDHEIGHT - 1 - highest
+        offset = boardHeight - 1 - highest
         if offset == 0:
             return topLine
         newTopLine = []

@@ -145,7 +145,7 @@ def readCommand(argv):
     parser.add_option('-n', '--no-play', dest='play',
                       action='store_false', default=True,
                       help='DO NOT play game')
-    parser.add_option('-b', '--board', dest=board_dim,
+    parser.add_option('-b', '--board', dest='board_dim',
                       default='10x20', help='Set board dimensions. Given as WIDTHxHEIGHT')
 
     options, otherjunk = parser.parse_args(argv)
