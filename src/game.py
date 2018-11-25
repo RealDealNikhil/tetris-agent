@@ -3,7 +3,7 @@
 # http://inventwithpython.com/pygame
 # Released under a "Simplified BSD" license
 
-import random, time, pygame, sys, copy
+import random, time, pygame, sys
 from config import *
 from board import *
 from pieceGenerator import *
@@ -184,8 +184,8 @@ class Game:
             pixelx, pixely = self.convertToPixelCoords(piece.x, piece.y)
 
         # draw each of the boxes that make up the piece
-        for x in range(TEMPLATEWIDTH):
-            for y in range(TEMPLATEHEIGHT):
+        for x in range(piece.width):
+            for y in range(piece.height):
                 if shapeToDraw[y][x] != BLANK:
                     self.drawBox(None, None, piece.color, pixelx + (x * BOXSIZE), pixely + (y * BOXSIZE))
 

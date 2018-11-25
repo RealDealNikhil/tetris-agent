@@ -1,6 +1,5 @@
 # contains random agent, qlearning agent, approximate qlearning agent
 import random, util
-from config import *
 from featureExtractor import *
 
 class RLAgent:
@@ -63,12 +62,10 @@ class RLAgent:
         self.episodesSoFar = 0
         self.gamesSoFar = 0
 
-
 class RandomAgent(RLAgent):
     def getAction(self, state, actions):
         action = random.choice(actions)
         return action
-
 
 class QLearningAgent(RLAgent):
     def __init__(self, **args):
@@ -151,34 +148,8 @@ class QLearningAgent(RLAgent):
         return self.computeValueFromQValues(state, legalActions)
 
     def stateExtractor(self, board, currentPiece, nextPiece):
-        topLine = self.getTopLine(board)
+        topLine = board.getTopLine()
         return (topLine, currentPiece.shape, nextPiece.shape)
-
-    def getTopLine(self, board):
-        topLine = []
-        for col in range(board.width):
-            blockFound = False
-            for row in range(board.height):
-                if board.board[col][row] != BLANK:
-                    topLine.append((row - 1, col))
-                    blockFound = True
-                    break
-            if not blockFound:
-                topLine.append((row, col))
-        return tuple(self.normalize(topLine, board.height))
-
-    # normalize topLine adjust rows so that lowest rows become row (BOARDHEIGHT - 1), offset higher rows by this amount
-    # columns are absolute. Do not adjust those.
-    def normalize(self, topLine, boardHeight):
-        highest = max(topLine, key=lambda i: i[0])[0]
-        offset = boardHeight - 1 - highest
-        if offset == 0:
-            return topLine
-        newTopLine = []
-        for pair in topLine:
-            newTopLine.append((pair[0] + offset, pair[1]))
-        return newTopLine
-
 
 class ApproximateQAgent(QLearningAgent):
     def __init__(self, **args):

@@ -2,9 +2,6 @@ import random
 from config import *
 from piece import *
 
-TEMPLATEWIDTH = 5
-TEMPLATEHEIGHT = 5
-
 class PieceGenerator:
     def __init__(self):
         S_SHAPE_TEMPLATE = [['.....',

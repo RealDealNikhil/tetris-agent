@@ -29,6 +29,31 @@ class Board:
                     actions.append((r, testPiece.x))
         return actions
 
+    def getTopLine(self):
+        topLine = []
+        for col in range(self.width):
+            blockFound = False
+            for row in range(self.height):
+                if self.board[col][row] != BLANK:
+                    topLine.append((row - 1, col))
+                    blockFound = True
+                    break
+            if not blockFound:
+                topLine.append((row, col))
+        return tuple(self.normalize(topLine))
+
+    # normalize topLine adjust rows so that lowest rows become row (BOARDHEIGHT - 1), offset higher rows by this amount
+    # columns are absolute. Do not adjust those.
+    def normalize(self, topLine):
+        highest = max(topLine, key=lambda i: i[0])[0]
+        offset = self.height - 1 - highest
+        if offset == 0:
+            return topLine
+        newTopLine = []
+        for pair in topLine:
+            newTopLine.append((pair[0] + offset, pair[1]))
+        return newTopLine
+
     def isValidPosition(self, piece, adjX=0, adjY=0):
         # Return True if the piece is within the board and not colliding
         template = piece.getTemplate()
