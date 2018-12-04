@@ -2,11 +2,14 @@ from config import *
 from pieceGenerator import *
 
 class Board:
-    def __init__(self, width, height):
+    def __init__(self, width, height, board=None):
         self.width = width
         self.height = height
-        self.board = self.getBlankBoard()
         self.generator= PieceGenerator()
+        if board is None:
+            self.board = self.getBlankBoard()
+        else:
+            self.board = board
 
     def getBlankBoard(self):
         # create and return a new blank board data structure
