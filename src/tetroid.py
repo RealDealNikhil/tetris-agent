@@ -6,6 +6,7 @@
 import cPickle
 from game import *
 
+
 def main():
 
     args = readCommand( sys.argv[1:] ) # Set game options for agent based on input
@@ -165,14 +166,15 @@ def readCommand(argv):
     if len(board_dim) != 2:
         raise Exception('Invalid board dimensions. Dimensions should be given as WIDTHxHEIGHT')
 
-    args = dict()
-    args['agent'] = tetroid
-    args['exportFile'] = options.exportFile
-    args['test'] = options.test
-    args['train'] = options.train
-    args['progress'] = options.progressTracker
-    args['play'] = options.play
-    args['board'] = board_dim
+    args = {
+        'agent': tetroid,
+        'exportFile': options.exportFile,
+        'test': options.test,
+        'train': options.train,
+        'progress': options.progressTracker,
+        'play': options.play,
+        'board': board_dim
+    }
     return args
 
 

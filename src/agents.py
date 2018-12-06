@@ -3,9 +3,12 @@ import random, util
 from featureExtractor import *
 
 class RLAgent:
-    def __init__(self, numTraining=10, numTesting=10, gamesPerEpisode=10, epsilon=0.5, alpha=0.5, gamma=1, values=None):
+    def __init__(self, numTraining=10, numTesting=10, gamesPerEpisode=10, epsilon=0.5, alpha=0.5,
+            epsilonDelta=0, alphaDelta=0, gamma=1, values=None):
         self.epsilon = float(epsilon)
         self.alpha = float(alpha)
+        self.epsilonDelta = float(epsilonDelta)
+        self.alphaDelta = float(alphaDelta)
         self.discount = float(gamma)
         self.numTraining = int(numTraining)
         self.numTesting = int(numTesting)
@@ -33,7 +36,7 @@ class RLAgent:
 
     def startEpisode(self):
         """
-          Called by environment when new episode of games is starting
+        Called by environment when new episode of games is starting
         """
         self.episodeRewards = 0.0
 
@@ -45,9 +48,11 @@ class RLAgent:
 
     def stopEpisode(self):
         """
-          Called by environment when episode is done
+        Called by environment when episode is done
         """
         self.episodesSoFar += 1
+        self.epsilon -= self.epsilonDelta
+        self.alpha -= self.alphaDelta
 
     def recordGame(self):
         """
