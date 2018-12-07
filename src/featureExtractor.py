@@ -1,7 +1,8 @@
 import util
 from board import *
 import copy
-from pieceGenerator import * 
+from pieceGenerator import *
+from config import *
 
 class Extractor:
 
@@ -34,7 +35,7 @@ class Extractor:
     #         adjacentSpaces = space.getAdjacentSpaces()
     #         for adjSpace in adjacentSpaces:
     #             if adjSpace in blankSpaceSet:
-                    
+
 
 
 
@@ -54,7 +55,7 @@ class Extractor:
 
         #difference between height of adjacent columns on the board (average height):
         oldboard = state[0]
-        board = Board(oldboard.width, oldboard.height, oldboard)
+        board = Board(oldboard.width, oldboard.height, oldboard.board)
         piece = state[1]
         pG = PieceGenerator()
         currPiece = pG.genPiece(piece.shape, piece.rotation)
@@ -103,16 +104,17 @@ class Extractor:
 
         numHoles = 0
         for col in board:
-            seenBlock = False:
+            index = None
             for i in range(len(col)):
                 if col[i] != BLANK:
                     index = i
                     break
 
-            for n in range(index, len(col)):
-                if col[n] == BLANK:
-                    countHoles += 1
-        features["numHoles"] == numHoles
+            if index is not None:
+                for n in range(index, len(col)):
+                    if col[n] == BLANK:
+                        numHoles += 1
+        features["numHoles"] = numHoles
 
         # blankSpaceSet = set()
         # for col in range(len(board)):
@@ -124,21 +126,3 @@ class Extractor:
 
 
          #just make new board
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
