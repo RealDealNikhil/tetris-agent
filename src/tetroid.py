@@ -93,15 +93,16 @@ def readDictFile(fileName):
 
 
 def parseAgentArgs(args, willTrain):
-    if args == None: return {}
-    pieces = args.split(',')
     opts = {}
-    for p in pieces:
-        if '=' in p:
-            key, val = p.split('=')
-        else:
-            key,val = p, 1
-        opts[key] = val
+
+    if args is not None:
+        pieces = args.split(',')
+        for p in pieces:
+            if '=' in p:
+                key, val = p.split('=')
+            else:
+                key,val = p, 1
+            opts[key] = val
 
     if not willTrain:
         opts['epsilon'] = 0.0
