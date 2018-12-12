@@ -56,7 +56,8 @@ class Game:
                 agent.observeTransition(prevState, prevAction, state, reward, legalActions)
 
             # choose an action
-            rotation, column = agent.getAction(state, legalActions)
+            action = agent.getAction(state, legalActions)
+            rotation, column = action
 
             # set piece options based on action
             fallingPiece.setRotation(rotation)

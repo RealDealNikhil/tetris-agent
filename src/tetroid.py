@@ -28,7 +28,7 @@ def main():
         trainingInfo = runEpisodes(game, agent, progressTracker, True)
 
         if exportFile:
-            writeToFile(exportFile, agent.q_values)
+            writeToFile(exportFile, agent.getValues())
 
         agent.endTraining()
 
@@ -45,6 +45,8 @@ def main():
             game.runGame(agent)
             game.showTextScreen("Game Over")
 
+    print agent.getValues()
+
 
 def runEpisodes(game, agent, progressTracker, inTraining):
     episodesInfo = []
@@ -60,6 +62,7 @@ def runEpisodes(game, agent, progressTracker, inTraining):
         agent.recordGame()
         if agent.gamesSoFar % progressTracker == 0:
             print agent.gamesSoFar
+            print agent.getValues()
         if agent.shouldStopEpisode():
             agent.stopEpisode()
             averageRewards = agent.episodeRewards / agent.gamesPerEpisode

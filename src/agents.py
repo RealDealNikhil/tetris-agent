@@ -85,6 +85,9 @@ class QLearningAgent(RLAgent):
         else:
             self.q_values = util.Counter()
 
+    def getValues(self):
+        return self.q_values
+
     def getQValue(self, state, action):
         return self.q_values[state, action]
 
@@ -97,7 +100,7 @@ class QLearningAgent(RLAgent):
         """
         if len(legalActions) == 0:
             return 0.0
-        maxVal = -999
+        maxVal = float('-inf')
         for action in legalActions:
             maxVal = max(maxVal, self.getQValue(state, action))
         return maxVal
@@ -109,7 +112,7 @@ class QLearningAgent(RLAgent):
           you should return None.
         """
         a = None
-        maxVal = -999
+        maxVal = float('-inf')
         for action in legalActions:
             val = self.getQValue(state, action)
             if val > maxVal:
@@ -169,21 +172,33 @@ class ApproximateQAgent(QLearningAgent):
         else:
             self.weights = util.Counter()
 
+    def getValues(self):
+        return self.weights
+
+    def stateExtractor(self, board, currentPiece, nextPiece):
+        return (board, currentPiece, nextPiece.shape)
+
     def getWeights(self):
         return self.weights
 
     def getQValue(self, state, action):
         """
-          Should return Q(state,action) = w * featureVector
-          where * is the dotProduct operator
+        Should return Q(state,action) = w * featureVector
+        where * is the dotProduct operator
         """
         return self.getWeights() * self.featExtractor.getFeatures(state, action)
 
-    def update(self, state, action, nextState, reward):
+    def update(self, state, action, nextState, reward, legalActions):
         """
-           Should update your weights based on transition
+        Should update your weights based on transition
         """
         features = self.featExtractor.getFeatures(state, action)
-        difference = self.alpha * (reward + self.discount * self.computeValueFromQValues(nextState) - self.getQValue(state, action))
+        difference = self.alpha * (reward + self.discount * self.computeValueFromQValues(nextState, legalActions) - self.getQValue(state, action))
+        # print "DIFFERENCE"
+        # print difference
+        # print "FEATURES"
+        # print features
         for i in features:
             self.weights[i] += difference * features[i]
+        # print "WEIGHTS"
+        # print self.weights
