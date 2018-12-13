@@ -1,5 +1,5 @@
 # contains random agent, qlearning agent, approximate qlearning agent
-import random, util
+import random, util, copy
 from featureExtractor import *
 
 class RLAgent:
@@ -105,19 +105,45 @@ class QLearningAgent(RLAgent):
             maxVal = max(maxVal, self.getQValue(state, action))
         return maxVal
 
+    # FOR EXTRACTING POLICY
+    # def getQWeight(self, state, action, weights, features):
+        # return weights * features
+
+    # def computeValueFromQWeights(self, state, legalActions, weights, features):
+        # """
+          # Returns max_action Q(state,action)
+          # where the max is over legal actions.  Note that if
+          # there are no legal actions, which is the case at the
+          # terminal state, you should return a value of 0.0.
+        # """
+        # if len(legalActions) == 0:
+            # return 0.0
+        # maxVal = float('-inf')
+        # for action in legalActions:
+            # maxVal = max(maxVal, self.getQWeight(state, action, weights, features))
+        # return maxVal
+
     def computeActionFromQValues(self, state, legalActions):
         """
           Compute the best action to take in a state.  Note that if there
           are no legal actions, which is the case at the terminal state,
           you should return None.
         """
+        allEqual = True
         a = None
+        preVal = None
+        val = None
         maxVal = float('-inf')
         for action in legalActions:
+            preVal = val
             val = self.getQValue(state, action)
+            if preVal is not None and val != preVal:
+                allEqual = False
             if val > maxVal:
                 maxVal = val
                 a = action
+        if allEqual:
+            return random.choice(legalActions)
         return a
 
     def getAction(self, state, legalActions):
@@ -165,18 +191,27 @@ class ApproximateQAgent(QLearningAgent):
     def __init__(self, **args):
         self.featExtractor = Extractor()
         QLearningAgent.__init__(self, **args)
+        print self.weights
 
     def setValues(self):
-        if self.values:
-            self.weights = util.Counter(self.values)
-        else:
-            self.weights = util.Counter()
+        # if self.values:
+            # self.weights = util.Counter(self.values)
+        # else:
+            # self.weights = util.Counter()
+        preset = {
+                'numHoles': -10,
+                'highestPoint': -10,
+                'numLinesRemoved': 100,
+                'avgHeightDiff': -10
+                }
+        self.weights = util.Counter(preset)
 
     def getValues(self):
         return self.weights
 
     def stateExtractor(self, board, currentPiece, nextPiece):
-        return (board, currentPiece, nextPiece.shape)
+        boardCopy = copy.deepcopy(board.board)
+        return (boardCopy, currentPiece, nextPiece.shape)
 
     def getWeights(self):
         return self.weights
@@ -193,12 +228,20 @@ class ApproximateQAgent(QLearningAgent):
         Should update your weights based on transition
         """
         features = self.featExtractor.getFeatures(state, action)
+        print "CURRENT STATE"
+        print state, action
+        print "FEATURES OF CURRENT STATE"
+        print features
+        print "REWARD"
+        print reward
+        print "VALUE OF CURRENT STATE"
+        print self.getQValue(state, action)
+        print "VALUE OF NEXT STATE"
+        print self.computeValueFromQValues(nextState, legalActions)
         difference = self.alpha * (reward + self.discount * self.computeValueFromQValues(nextState, legalActions) - self.getQValue(state, action))
-        # print "DIFFERENCE"
-        # print difference
-        # print "FEATURES"
-        # print features
+        print "DIFFERENCE"
+        print difference
         for i in features:
             self.weights[i] += difference * features[i]
-        # print "WEIGHTS"
-        # print self.weights
+        print "WEIGHTS"
+        print self.weights

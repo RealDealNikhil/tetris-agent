@@ -53,29 +53,16 @@ class Extractor:
         # 3. we will now have an edited board, so we can easily calculate the bumpiness, highest point, total holes
 
         #difference between height of adjacent columns on the board (average height):
-        features["bias"] = 1.0
+        features["bias"] = 0.1
 
         oldboard = state[0]
-        newBoard = copy.deepcopy(oldboard.board)
-        board = Board(oldboard.width, oldboard.height, newBoard)
+        newBoard = copy.deepcopy(oldboard)
+        board = Board(len(newBoard), len(newBoard[0]), newBoard)
         piece = state[1]
         pG = PieceGenerator()
         currPiece = pG.genPiece(piece.shape, piece.rotation)
 
-        rotation, column = action
-
-        # set piece options based on action
-        currPiece.setRotation(rotation)
-        currPiece.setX(column)
-
-        # start piece at very top of board
-        currPiece.setY(0)
-
-        # drop piece in column
-        i = 0
-        while board.isValidPosition(currPiece, adjY=i):
-            i += 1
-        currPiece.setY(i - 1)
+        currPiece.setAction(action)
 
         board.addToBoard(currPiece)
 
@@ -84,9 +71,11 @@ class Extractor:
 
         topLine = board.getTopLine(normalize=False)
         avgHeightDiff = 0
-        highestPoint = 0
+        # BOARD STORES HIGHEST POINT AS BOTTOM, LOWEST POINT AS TOP
+        # SO FINDING THIS HIGHEST POINT IS REVERSED
+        highestPoint = float('inf')
         for i in range(len(topLine)):
-            if topLine[i][0] > highestPoint:
+            if topLine[i][0] < highestPoint:
                 highestPoint = topLine[i][0]
             curHeight = topLine[i][0]
             if i + 1 < len(topLine) and i - 1 >= 0:
@@ -100,8 +89,8 @@ class Extractor:
                 rightHeight = topLine[i + 1][0]
                 avgHeightDiff += abs(rightHeight - curHeight)
         avgHeightDiff = float(avgHeightDiff)/len(topLine)
-        features["avgHeightDiff"] = avgHeightDiff / float(board.height)
-        features["highestPoint"] = (highestPoint - 1) / float(board.height)
+        features["avgHeightDiff"] = avgHeightDiff / (float(board.height) * 10)
+        features["highestPoint"] = (board.height - highestPoint - 1) / (float(board.height) * 10)
 
 
         numHoles = 0
@@ -116,9 +105,7 @@ class Extractor:
                 for n in range(index, len(col)):
                     if col[n] == BLANK:
                         numHoles += 1
-        features["numHoles"] = numHoles / float(board.width * board.height)
-
-        features.divideAll(10.0)
+        features["numHoles"] = numHoles / (float(board.width * board.height) * 10)
 
         return features
         # blankSpaceSet = set()
