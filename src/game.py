@@ -3,12 +3,11 @@
 # http://inventwithpython.com/pygame
 # Released under a "Simplified BSD" license
 
-import random, time, pygame, sys, copy, util
+import pygame, sys
 from config import *
 from board import *
 from pieceGenerator import *
 from pygame.locals import *
-from featureExtractor import *
 
 
 class Game:
@@ -25,10 +24,6 @@ class Game:
         pygame.display.set_caption('Tetromino')
 
         self.showTextScreen('Tetroid')
-
-        # FOR EXTRACTING POLICY
-        self.featExtractor = Extractor()
-        # self.weights = util.Counter()
 
     def runGame(self, agent, auto=False):
         # setup variables for the start of the game
@@ -67,7 +62,7 @@ class Game:
             # take action
             fallingPiece.setAction(action)
 
-            # make copy of board, drop piece in this new copy of the board
+            # add piece to the game board
             board.addToBoard(fallingPiece)
 
             # draw interim board if we are playing so we can see what's happening
