@@ -23,5 +23,10 @@ class Piece:
     def setX(self, x):
         self.x = x
 
+    def setAction(self, action):
+        rotation, column = action
+        self.setRotation(rotation)
+        self.setX(column)
+
     def setY(self, y):
         self.y = y - self.offsets[self.rotation][2]

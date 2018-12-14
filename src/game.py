@@ -1,13 +1,14 @@
-# Tetromino (a Tetris clone)
+# tetromino (a tetris clone)
 # By Al Sweigart al@inventwithpython.com
 # http://inventwithpython.com/pygame
 # Released under a "Simplified BSD" license
 
-import random, time, pygame, sys
+import random, time, pygame, sys, copy, util
 from config import *
 from board import *
 from pieceGenerator import *
 from pygame.locals import *
+from featureExtractor import *
 
 
 class Game:
@@ -25,74 +26,143 @@ class Game:
 
         self.showTextScreen('Tetroid')
 
+        # FOR EXTRACTING POLICY
+        self.featExtractor = Extractor()
+        # self.weights = util.Counter()
+
     def runGame(self, agent, auto=False):
         # setup variables for the start of the game
         board = Board(self.BOARDWIDTH, self.BOARDHEIGHT)
         generator = PieceGenerator()
         score = 0
 
-        fallingPiece = None
+        fallingPiece = generator.genRandPiece()
         nextPiece = generator.genRandPiece()
-        observeTransition = False
+
+        nextState = agent.stateExtractor(board, fallingPiece, nextPiece)
+        # get all actions for falling piece on board
+        legalActions = board.getLegalActions(fallingPiece)
+        if len(legalActions) == 0:
+            return
+
+        # observeTransition = False
+
+        # FOR EXTRACTING POLICY
+        # agent.alpha = 0.5
 
         while True: # game loop
-            if fallingPiece != None:
-                prevState = state
-                prevAction = (rotation, column)
-                observeTransition = True
+            # draw the current board
+            if not auto:
+                self.checkForQuit()
+                # drawing everything on the screen
+                self.DISPLAYSURF.fill(BGCOLOR)
+                self.drawBoard(board.board)
+                self.drawStatus(score)
+                self.drawPiece(fallingPiece, pixelx=150, pixely=10)
+                self.drawNextPiece(nextPiece)
+                while self.checkForKeyPress() == None:
+                    pygame.display.update()
 
-            # get falling piece
-            fallingPiece = nextPiece
-            nextPiece = generator.genRandPiece()
+            # update state
+            state = nextState
 
-            # get all actions for falling piece on board
-            legalActions = board.getLegalActions(fallingPiece)
-            if len(legalActions) == 0:
-                return
+            # choose action (using legalactions generated in the last iteration
+            action = agent.getAction(state, legalActions)
 
-            # observe state change
-            state = agent.stateExtractor(board, fallingPiece, nextPiece)
-            if observeTransition:
-                agent.observeTransition(prevState, prevAction, state, reward, legalActions)
+            # take action
+            fallingPiece.setAction(action)
 
-            # choose an action
-            rotation, column = agent.getAction(state, legalActions)
-
-            # set piece options based on action
-            fallingPiece.setRotation(rotation)
-            fallingPiece.setX(column)
-
-            # start piece at very top of board
-            fallingPiece.setY(0)
-
-            # drop piece in column
-            i = 0
-            while board.isValidPosition(fallingPiece, adjY=i):
-                i += 1
-            fallingPiece.setY(i - 1)
-
+            # make copy of board, drop piece in this new copy of the board
             board.addToBoard(fallingPiece)
 
-            # draw interim board if in testing so we can see what's happening
+            # draw interim board if we are playing so we can see what's happening
             if not auto:
                 self.drawBoard(board.board)
                 while self.checkForKeyPress() == None:
                     pygame.display.update()
 
-            # reward function
+            # update board and get reward
             reward = board.getReward()
             score += reward
 
-            self.checkForQuit()
-            # drawing everything on the screen
-            self.DISPLAYSURF.fill(BGCOLOR)
-            self.drawBoard(board.board)
-            self.drawStatus(score)
-            self.drawNextPiece(nextPiece)
+            # update state
+            fallingPiece = nextPiece
+            nextPiece = generator.genRandPiece()
+            nextState = agent.stateExtractor(board, fallingPiece, nextPiece)
 
-            if not auto:
-                while self.checkForKeyPress() == None:
-                    pygame.display.update()
+            # get legalactions for the new state
+            legalActions = board.getLegalActions(fallingPiece)
+            if len(legalActions) == 0:
+                reward = -500
+                agent.observeTransition(state, action, nextState, reward, legalActions)
+                return
+
+            # finally observe transition
+            agent.observeTransition(state, action, nextState, reward, legalActions)
+
+        # while True: # game loop
+            # if fallingPiece != None:
+                # observeTransition = True
+
+            # # get falling piece
+            # fallingPiece = nextPiece
+            # nextPiece = generator.genRandPiece()
+
+            # # get all actions for falling piece on board
+            # legalActions = board.getLegalActions(fallingPiece)
+            # if len(legalActions) == 0:
+                # return
+
+            # # observe state change
+            # state = agent.stateExtractor(board, fallingPiece, nextPiece)
+            # # COMMENT OUT FOR EXTRACTING CONSISTENT POLICY
+            # if observeTransition:
+                # agent.observeTransition(prevState, prevAction, state, reward, legalActions)
+
+            # # choose an action
+            # action = agent.getAction(state, legalActions)
+
+            # # set previous state and action
+            # oldBoard = copy.deepcopy(state[0])
+            # prevState = (oldBoard, state[1], state[2])
+            # prevAction = action
+
+            # rotation, column = action
+
+            # # FOR EXTRACTING POLICY
+            # # if observeTransition:
+                # # features = self.featExtractor.getFeatures((board, fallingPiece), action)
+                # # difference = agent.alpha * (reward + agent.discount * agent.computeValueFromQWeights(state, legalActions, self.weights, features) - agent.getQWeight(prevState, prevAction, self.weights, features))
+                # # for i in features:
+                    # # self.weights[i] += difference * features[i]
+                # # # print features
+                # # # print self.weights
+
+            # set piece options based on action
+            # fallingPiece.setRotation(rotation)
+            # fallingPiece.setX(column)
+
+            # board.addToBoard(fallingPiece)
+
+            # # draw interim board if in testing so we can see what's happening
+            # if not auto:
+                # self.drawBoard(board.board)
+                # while self.checkForKeyPress() == None:
+                    # pygame.display.update()
+
+            # # reward function
+            # reward = board.getReward()
+            # score += reward
+
+            # if not auto:
+                # self.checkForQuit()
+                # # drawing everything on the screen
+                # self.DISPLAYSURF.fill(BGCOLOR)
+                # self.drawBoard(board.board)
+                # self.drawStatus(score)
+                # self.drawNextPiece(nextPiece)
+                # while self.checkForKeyPress() == None:
+                    # pygame.display.update()
 
     def makeTextObjs(self, text, font, color):
         surf = font.render(text, True, color)

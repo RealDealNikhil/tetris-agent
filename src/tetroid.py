@@ -28,10 +28,9 @@ def main():
         trainingInfo = runEpisodes(game, agent, progressTracker, True)
 
         if exportFile:
-            writeToFile(exportFile, agent.q_values)
+            writeToFile(exportFile, agent.getValues())
 
         agent.endTraining()
-
 
     # test agent
     if test:
@@ -41,9 +40,22 @@ def main():
     printList(testingInfo)
 
     if play:
-        while True:
-            game.runGame(agent)
-            game.showTextScreen("Game Over")
+        game.runGame(agent, auto=True)
+        game.showTextScreen("Game Over")
+
+    # FOR EXTRACTING POLICY
+    # if play:
+        # i = 0
+        # while i < 1000:
+            # game.runGame(agent, auto=True)
+            # if i % 1000 == 0:
+                # print game.weights
+            # # game.showTextScreen("Game Over")
+            # i += 1
+        # print game.weights
+        # writeToFile("extractedWeights", game.weights)
+
+    print agent.getValues()
 
 
 def runEpisodes(game, agent, progressTracker, inTraining):
@@ -56,10 +68,12 @@ def runEpisodes(game, agent, progressTracker, inTraining):
         check = agent.isInTesting
         infoString = "TESTING"
     while check():
-        game.runGame(agent, auto=True)
+        # game.runGame(agent, auto=True)
+        game.runGame(agent)
         agent.recordGame()
         if agent.gamesSoFar % progressTracker == 0:
             print agent.gamesSoFar
+            print agent.getValues()
         if agent.shouldStopEpisode():
             agent.stopEpisode()
             averageRewards = agent.episodeRewards / agent.gamesPerEpisode

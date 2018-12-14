@@ -32,7 +32,7 @@ class Board:
                     actions.append((r, testPiece.x))
         return actions
 
-    def getTopLine(self):
+    def getTopLine(self, normalize=True):
         topLine = []
         for col in range(self.width):
             blockFound = False
@@ -43,7 +43,9 @@ class Board:
                     break
             if not blockFound:
                 topLine.append((row, col))
-        return tuple(self.normalize(topLine))
+        if normalize:
+            return tuple(self.normalize(topLine))
+        return topLine
 
     # normalize topLine adjust rows so that lowest rows become row (BOARDHEIGHT - 1), offset higher rows by this amount
     # columns are absolute. Do not adjust those.
@@ -74,7 +76,18 @@ class Board:
     def isOnBoard(self, x, y):
         return x >= 0 and x < self.width and y < self.height
 
+    def dropPiece(self, piece):
+        # start piece at very top of board
+        piece.setY(0)
+
+        # drop piece in column
+        i = 0
+        while self.isValidPosition(piece, adjY=i):
+            i += 1
+        piece.setY(i - 1)
+
     def addToBoard(self, piece):
+        self.dropPiece(piece)
         # fill in the board based on piece's location, shape, and rotation
         template = piece.getTemplate()
         for x in range(piece.width):
@@ -114,5 +127,5 @@ class Board:
     def getReward(self):
         numLinesRemoved = self.removeCompleteLines()
         if numLinesRemoved == 0:
-            return -1
-        return 1000 * numLinesRemoved
+            return 0
+        return numLinesRemoved

@@ -1,7 +1,7 @@
-import util
+import util, copy
 from board import *
-import copy
-from pieceGenerator import * 
+from pieceGenerator import *
+from config import *
 
 class Extractor:
 
@@ -53,65 +53,61 @@ class Extractor:
         # 3. we will now have an edited board, so we can easily calculate the bumpiness, highest point, total holes
 
         #difference between height of adjacent columns on the board (average height):
+        features["bias"] = 0.1
+
         oldboard = state[0]
-        board = Board(oldboard.width, oldboard.height, oldboard)
+        newBoard = copy.deepcopy(oldboard)
+        board = Board(len(newBoard), len(newBoard[0]), newBoard)
         piece = state[1]
         pG = PieceGenerator()
         currPiece = pG.genPiece(piece.shape, piece.rotation)
 
-        rotation, column = action
-
-        # set piece options based on action
-        currPiece.setRotation(rotation)
-        currPiece.setX(column)
-
-        # start piece at very top of board
-        currPiece.setY(0)
-
-        # drop piece in column
-        i = 0
-        while board.isValidPosition(currPiece, adjY=i):
-            i += 1
-        currPiece.setY(i - 1)
+        currPiece.setAction(action)
 
         board.addToBoard(currPiece)
 
         numLinesRemoved = board.removeCompleteLines()
-        features["numLinesRemoved"] = numLinesRemoved
+        # features["numLinesRemoved"] = numLinesRemoved
 
-        topLine = board.getTopLine()
+        topLine = board.getTopLine(normalize=False)
         avgHeightDiff = 0
-        highestPoint = 0
+        # BOARD STORES HIGHEST POINT AS BOTTOM, LOWEST POINT AS TOP
+        # SO FINDING THIS HIGHEST POINT IS REVERSED
+        highestPoint = float('inf')
         for i in range(len(topLine)):
-            if topLine[i][0] > highestPoint:
+            if topLine[i][0] < highestPoint:
                 highestPoint = topLine[i][0]
             curHeight = topLine[i][0]
-            if i + 1 <= len(topLine) and i - 1 >= 0:
+            if i + 1 < len(topLine) and i - 1 >= 0:
                 rightHeight = topLine[i + 1][0]
                 leftHeight = topLine[i - 1][0]
                 avgHeightDiff += (abs(rightHeight - curHeight) + abs(leftHeight - curHeight))/2
-            elif i + 1 > len(topLine) and i - 1 >= 0:
+            elif i + 1 >= len(topLine) and i - 1 >= 0:
                 leftHeight = topLine[i - 1][0]
                 avgHeightDiff += abs(leftHeight - curHeight)
-            elif i - 1 < 0 and i + 1 <= len(topLine):
+            elif i - 1 < 0 and i + 1 < len(topLine):
                 rightHeight = topLine[i + 1][0]
                 avgHeightDiff += abs(rightHeight - curHeight)
         avgHeightDiff = float(avgHeightDiff)/len(topLine)
-        features["avgHeightDiff"] = avgHeightDiff
-        features["highestPoint"] = highestPoint
+        features["avgHeightDiff"] = avgHeightDiff / (float(board.height) * 10)
+        features["highestPoint"] = (board.height - highestPoint - 1) / (float(board.height) * 10)
 
 
         numHoles = 0
-        for col in board:
+        for col in board.board:
+            index = None
             for i in range(len(col)):
                 if col[i] != BLANK:
                     index = i
                     break
-            for n in range(index, len(col)):
-                if col[n] == BLANK:
-                    numHoles += 1
-        features["numHoles"] == numHoles
 
+            if index is not None:
+                for n in range(index, len(col)):
+                    if col[n] == BLANK:
+                        numHoles += 1
+        features["numHoles"] = numHoles / (float(board.width * board.height) * 10)
+
+        return features
         # blankSpaceSet = set()
         # for col in range(len(board)):
         #     for i in range(len(col)):
@@ -122,21 +118,3 @@ class Extractor:
 
 
          #just make new board
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

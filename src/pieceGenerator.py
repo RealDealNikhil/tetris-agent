@@ -137,5 +137,5 @@ class PieceGenerator:
     # generate random piece
     def genRandPiece(self):
         shape = random.choice(list(self.pieces.keys()))
-        rotation = 0
+        rotation = random.choice(range(len(self.pieces[shape])))
         return self.genPiece(shape, rotation)
