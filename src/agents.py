@@ -194,17 +194,18 @@ class ApproximateQAgent(QLearningAgent):
         print self.weights
 
     def setValues(self):
-        if self.values:
-            self.weights = util.Counter(self.values)
-        else:
-            self.weights = util.Counter()
+        # if self.values:
+            # self.weights = util.Counter(self.values)
+        # else:
+            # self.weights = util.Counter()
         # preset = {
                 # 'numHoles': -10,
                 # 'highestPoint': -10,
                 # 'numLinesRemoved': 100,
                 # 'avgHeightDiff': -10
                 # }
-        # self.weights = util.Counter(preset)
+        preset = {'numHoles': -0.973771496261925, 'highestPoint': -0.5661148282972845, 'bias': -0.02813138379002768, 'avgHeightDiff': -0.03046703139973776}
+        self.weights = util.Counter(preset)
 
     def getValues(self):
         return self.weights
@@ -228,10 +229,10 @@ class ApproximateQAgent(QLearningAgent):
         Should update your weights based on transition
         """
         features = self.featExtractor.getFeatures(state, action)
-        # print "CURRENT STATE"
-        # print state, action
-        # print "FEATURES OF CURRENT STATE"
-        # print features
+        print "CURRENT STATE"
+        print state, action
+        print "FEATURES OF CURRENT STATE"
+        print features
         # print "REWARD"
         # print reward
         # print "VALUE OF CURRENT STATE"

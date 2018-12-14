@@ -110,7 +110,7 @@ class Extractor:
         features["numHoles"] = len(blankSpaceSet)
 
         holeSizeSquared = self.getHolesSizeSquared(blankSpaceSet, board, topLine)
-        features["holeSizeSquared"] = holeSizeSquared
+        # features["holeSizeSquared"] = holeSizeSquared
 
         features.divideAll(float(board.width * board.height))
 

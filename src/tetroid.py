@@ -40,7 +40,7 @@ def main():
     printList(testingInfo)
 
     if play:
-        game.runGame(agent, auto=True)
+        game.runGame(agent)
         game.showTextScreen("Game Over")
 
     # FOR EXTRACTING POLICY
@@ -68,8 +68,8 @@ def runEpisodes(game, agent, progressTracker, inTraining):
         check = agent.isInTesting
         infoString = "TESTING"
     while check():
-        # game.runGame(agent, auto=True)
-        game.runGame(agent)
+        game.runGame(agent, auto=True)
+        # game.runGame(agent)
         agent.recordGame()
         if agent.gamesSoFar % progressTracker == 0:
             print agent.gamesSoFar
