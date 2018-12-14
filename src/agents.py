@@ -64,6 +64,8 @@ class RLAgent:
         # Take off the training wheels
         self.epsilon = 0.0    # no exploration
         self.alpha = 0.0      # no learning
+        self.epsilonDelta = 0.0
+        self.alphaDelta = 0.0
         self.episodesSoFar = 0
         self.gamesSoFar = 0
 
@@ -210,9 +212,6 @@ class ApproximateQAgent(QLearningAgent):
     def stateExtractor(self, board, currentPiece, nextPiece):
         boardCopy = copy.deepcopy(board.board)
         return (boardCopy, currentPiece, nextPiece.shape)
-
-    def stateExtractor(self, board, currentPiece, nextPiece):
-        return (board, currentPiece, nextPiece.shape)
 
     def getWeights(self):
         return self.weights
