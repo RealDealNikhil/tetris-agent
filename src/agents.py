@@ -228,10 +228,10 @@ class ApproximateQAgent(QLearningAgent):
         Should update your weights based on transition
         """
         features = self.featExtractor.getFeatures(state, action)
-        # print "CURRENT STATE"
-        # print state, action
-        # print "FEATURES OF CURRENT STATE"
-        # print features
+        print "CURRENT STATE"
+        print state, action
+        print "FEATURES OF CURRENT STATE"
+        print features
         # print "REWARD"
         # print reward
         # print "VALUE OF CURRENT STATE"

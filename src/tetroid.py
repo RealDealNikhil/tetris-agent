@@ -68,7 +68,7 @@ def runEpisodes(game, agent, progressTracker, inTraining):
         check = agent.isInTesting
         infoString = "TESTING"
     while check():
-        # game.runGame(agent, auto=True)
+        #game.runGame(agent, auto=True)
         game.runGame(agent)
         agent.recordGame()
         if agent.gamesSoFar % progressTracker == 0:

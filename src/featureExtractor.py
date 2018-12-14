@@ -6,36 +6,58 @@ from config import *
 class Extractor:
 
 
-    # def getAdjacentSpaces(space, board):
-    #     spaceList = []
-    #     x, y  = space
-    #     if x + 1 <= board.height:
-    #         spaceList.append((x + 1, y))
-    #         # if y + 1 <= board.width:
-    #         #     spaceList.append((x+1, y+1))
-    #         # if y - 1 >= 0:
-    #         #     spaceList.append((x+1, y-1))
-    #     if x - 1 >= 0:
-    #         spaceList.append((x-1, y))
-    #         # if y + 1 <= board.width:
-    #         #     spaceList.append((x-1, y+1))
-    #         # if y - 1 >= 0:
-    #         #     spaceList.append((x-1, y-1))
+    def getAdjacentSpaces(self, space, board):
+        spaceList = []
+        x, y  = space
+        if x + 1 < board.height:
+            spaceList.append((x + 1, y))
+            # if y + 1 <= board.width:
+            #     spaceList.append((x+1, y+1))
+            # if y - 1 >= 0:
+            #     spaceList.append((x+1, y-1))
+        if x - 1 >= 0:
+            spaceList.append((x-1, y))
+            # if y + 1 <= board.width:
+            #     spaceList.append((x-1, y+1))
+            # if y - 1 >= 0:
+            #     spaceList.append((x-1, y-1))
 
-    #     if y + 1 <= board.width:
-    #         spaceList.append((x, y+1))
-    #     if y - 1 >= 0:
-    #         spaceList.append((x, y-1))
+        if y + 1 < board.width:
+            spaceList.append((x, y+1))
+        if y - 1 >= 0:
+            spaceList.append((x, y-1))
+        return spaceList
 
-    # def getHoles(self, blankSpaceSet, board):
+    def getHolesSizeSquared(self, blankSpaceSet, board):
+        
+        if len(blankSpaceSet) == 0:
+            return 0
 
-    #     countHoles = 0
-    #     for space in blankSpaceSet:
-    #         adjacentSpaces = space.getAdjacentSpaces()
-    #         for adjSpace in adjacentSpaces:
-    #             if adjSpace in blankSpaceSet:
+        space = blankSpaceSet.pop()
+        blankSpaceSet.add(space)
+        visited = set()
+        sumSquaredHoleSize = 0
+        for space in blankSpaceSet:
+            sumSquaredHoleSize += (self.getHolesUtil(blankSpaceSet, board, visited, space, 0))**2
+        return sumSquaredHoleSize
 
-
+    def getHolesUtil(self, blankSpaceSet, board, visited, space, countHoleSize):
+        topLineTemp = board.getTopLine(normalize=False)
+        visited.add(space)
+        adjSpaces = self.getAdjacentSpaces(space, board)
+        for adjspace in adjSpaces:
+            y, x = adjspace
+            y1, x1 = topLineTemp[x]
+            if y > y1:
+                continue
+            print y, x
+            if board.board[x][y] == BLANK and adjspace not in visited:
+                print "hi"
+                countHoleSize += 1
+                self.getHolesUtil(blankSpaceSet, board, visited, adjspace, countHoleSize)
+        print countHoleSize
+        return countHoleSize
+        
 
 
 
@@ -93,8 +115,10 @@ class Extractor:
         features["highestPoint"] = (board.height - highestPoint - 1) / (float(board.height) * 10)
 
 
+        blankSpaceSet = set()
         numHoles = 0
-        for col in board.board:
+        for column in range(len(board.board)):
+            col = board.board[column]
             index = None
             for i in range(len(col)):
                 if col[i] != BLANK:
@@ -104,10 +128,15 @@ class Extractor:
             if index is not None:
                 for n in range(index, len(col)):
                     if col[n] == BLANK:
+                        # blankSpaceSet.append((n, column))
+                        #print str(n) + str(column)
+                        coordinates = (n, column)
+                        blankSpaceSet.add(coordinates)
+                        #print blankSpaceSet
                         numHoles += 1
         features["numHoles"] = numHoles / (float(board.width * board.height) * 10)
 
-        return features
+        
         # blankSpaceSet = set()
         # for col in range(len(board)):
         #     for i in range(len(col)):
@@ -115,6 +144,19 @@ class Extractor:
         #             coordinates = (i, col)
         #             blankSpaceSet.add(coordinates)
 
+        # blankSpaceSet = set()
+        # depth = board.height
+        # for i in range(len(topLine)):
+        #     y = topLine[i][0]
+        #     for n in range(y, depth - 1):
+        #         if board.board[n][i] == BLANK:
+        #             coordinates = (n, i)
+        #             blankSpaceSet.add(coordinates)
+
+        holeSizeSquared = self.getHolesSizeSquared(blankSpaceSet, board)
+        features["holeSizeSquared"] = holeSizeSquared
+
+        return features
 
 
          #just make new board
