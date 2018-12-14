@@ -34,7 +34,7 @@ class Extractor:
     #         adjacentSpaces = space.getAdjacentSpaces()
     #         for adjSpace in adjacentSpaces:
     #             if adjSpace in blankSpaceSet:
-                    
+
 
 
 
@@ -103,15 +103,13 @@ class Extractor:
 
         numHoles = 0
         for col in board:
-            seenBlock = False:
             for i in range(len(col)):
                 if col[i] != BLANK:
                     index = i
                     break
-
             for n in range(index, len(col)):
                 if col[n] == BLANK:
-                    countHoles += 1
+                    numHoles += 1
         features["numHoles"] == numHoles
 
         # blankSpaceSet = set()
