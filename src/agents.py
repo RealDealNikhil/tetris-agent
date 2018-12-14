@@ -194,17 +194,17 @@ class ApproximateQAgent(QLearningAgent):
         print self.weights
 
     def setValues(self):
-        # if self.values:
-            # self.weights = util.Counter(self.values)
-        # else:
-            # self.weights = util.Counter()
-        preset = {
-                'numHoles': -10,
-                'highestPoint': -10,
-                'numLinesRemoved': 100,
-                'avgHeightDiff': -10
-                }
-        self.weights = util.Counter(preset)
+        if self.values:
+            self.weights = util.Counter(self.values)
+        else:
+            self.weights = util.Counter()
+        # preset = {
+                # 'numHoles': -10,
+                # 'highestPoint': -10,
+                # 'numLinesRemoved': 100,
+                # 'avgHeightDiff': -10
+                # }
+        # self.weights = util.Counter(preset)
 
     def getValues(self):
         return self.weights
@@ -228,20 +228,20 @@ class ApproximateQAgent(QLearningAgent):
         Should update your weights based on transition
         """
         features = self.featExtractor.getFeatures(state, action)
-        print "CURRENT STATE"
-        print state, action
-        print "FEATURES OF CURRENT STATE"
-        print features
-        print "REWARD"
-        print reward
-        print "VALUE OF CURRENT STATE"
-        print self.getQValue(state, action)
-        print "VALUE OF NEXT STATE"
-        print self.computeValueFromQValues(nextState, legalActions)
+        # print "CURRENT STATE"
+        # print state, action
+        # print "FEATURES OF CURRENT STATE"
+        # print features
+        # print "REWARD"
+        # print reward
+        # print "VALUE OF CURRENT STATE"
+        # print self.getQValue(state, action)
+        # print "VALUE OF NEXT STATE"
+        # print self.computeValueFromQValues(nextState, legalActions)
         difference = self.alpha * (reward + self.discount * self.computeValueFromQValues(nextState, legalActions) - self.getQValue(state, action))
-        print "DIFFERENCE"
-        print difference
+        # print "DIFFERENCE"
+        # print difference
         for i in features:
             self.weights[i] += difference * features[i]
-        print "WEIGHTS"
-        print self.weights
+        # print "WEIGHTS"
+        # print self.weights

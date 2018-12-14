@@ -67,7 +67,7 @@ class Extractor:
         board.addToBoard(currPiece)
 
         numLinesRemoved = board.removeCompleteLines()
-        features["numLinesRemoved"] = numLinesRemoved
+        # features["numLinesRemoved"] = numLinesRemoved
 
         topLine = board.getTopLine(normalize=False)
         avgHeightDiff = 0

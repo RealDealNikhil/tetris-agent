@@ -93,6 +93,8 @@ class Game:
             # get legalactions for the new state
             legalActions = board.getLegalActions(fallingPiece)
             if len(legalActions) == 0:
+                reward = -500
+                agent.observeTransition(state, action, nextState, reward, legalActions)
                 return
 
             # finally observe transition

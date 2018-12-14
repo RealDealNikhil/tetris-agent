@@ -127,5 +127,5 @@ class Board:
     def getReward(self):
         numLinesRemoved = self.removeCompleteLines()
         if numLinesRemoved == 0:
-            return -1.0 / 10
+            return 0
         return numLinesRemoved
