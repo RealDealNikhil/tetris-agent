@@ -211,7 +211,7 @@ class ApproximateQAgent(QLearningAgent):
 
     def stateExtractor(self, board, currentPiece, nextPiece):
         boardCopy = copy.deepcopy(board.board)
-        return (boardCopy, currentPiece, nextPiece.shape)
+        return (boardCopy, currentPiece.shape, nextPiece.shape)
 
     def getWeights(self):
         return self.weights

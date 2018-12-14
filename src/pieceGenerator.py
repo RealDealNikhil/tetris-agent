@@ -134,6 +134,11 @@ class PieceGenerator:
         offsets = self.offsets[shape]
         return Piece(shape, rotation, color, templates, offsets)
 
+    # generate random piece given a shape
+    def genRandPieceFromShape(self, shape):
+        rotation = random.choice(range(len(self.pieces[shape])))
+        return self.genPiece(shape, rotation)
+
     # generate random piece
     def genRandPiece(self):
         shape = random.choice(list(self.pieces.keys()))
