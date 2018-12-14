@@ -45,11 +45,6 @@ class Game:
         if len(legalActions) == 0:
             return
 
-        # observeTransition = False
-
-        # FOR EXTRACTING POLICY
-        # agent.alpha = 0.5
-
         while True: # game loop
             # draw the current board
             if not auto:
@@ -90,8 +85,10 @@ class Game:
             nextPiece = generator.genRandPiece()
             nextState = agent.stateExtractor(board, fallingPiece, nextPiece)
 
-            # get legalactions for the new state
+            # get legal actions for the new state
             legalActions = board.getLegalActions(fallingPiece)
+
+            # if no more legal actions, game is over
             if len(legalActions) == 0:
                 reward = -500
                 agent.observeTransition(state, action, nextState, reward, legalActions)
@@ -99,70 +96,6 @@ class Game:
 
             # finally observe transition
             agent.observeTransition(state, action, nextState, reward, legalActions)
-
-        # while True: # game loop
-            # if fallingPiece != None:
-                # observeTransition = True
-
-            # # get falling piece
-            # fallingPiece = nextPiece
-            # nextPiece = generator.genRandPiece()
-
-            # # get all actions for falling piece on board
-            # legalActions = board.getLegalActions(fallingPiece)
-            # if len(legalActions) == 0:
-                # return
-
-            # # observe state change
-            # state = agent.stateExtractor(board, fallingPiece, nextPiece)
-            # # COMMENT OUT FOR EXTRACTING CONSISTENT POLICY
-            # if observeTransition:
-                # agent.observeTransition(prevState, prevAction, state, reward, legalActions)
-
-            # # choose an action
-            # action = agent.getAction(state, legalActions)
-
-            # # set previous state and action
-            # oldBoard = copy.deepcopy(state[0])
-            # prevState = (oldBoard, state[1], state[2])
-            # prevAction = action
-
-            # rotation, column = action
-
-            # # FOR EXTRACTING POLICY
-            # # if observeTransition:
-                # # features = self.featExtractor.getFeatures((board, fallingPiece), action)
-                # # difference = agent.alpha * (reward + agent.discount * agent.computeValueFromQWeights(state, legalActions, self.weights, features) - agent.getQWeight(prevState, prevAction, self.weights, features))
-                # # for i in features:
-                    # # self.weights[i] += difference * features[i]
-                # # # print features
-                # # # print self.weights
-
-            # set piece options based on action
-            # fallingPiece.setRotation(rotation)
-            # fallingPiece.setX(column)
-
-            # board.addToBoard(fallingPiece)
-
-            # # draw interim board if in testing so we can see what's happening
-            # if not auto:
-                # self.drawBoard(board.board)
-                # while self.checkForKeyPress() == None:
-                    # pygame.display.update()
-
-            # # reward function
-            # reward = board.getReward()
-            # score += reward
-
-            # if not auto:
-                # self.checkForQuit()
-                # # drawing everything on the screen
-                # self.DISPLAYSURF.fill(BGCOLOR)
-                # self.drawBoard(board.board)
-                # self.drawStatus(score)
-                # self.drawNextPiece(nextPiece)
-                # while self.checkForKeyPress() == None:
-                    # pygame.display.update()
 
     def makeTextObjs(self, text, font, color):
         surf = font.render(text, True, color)

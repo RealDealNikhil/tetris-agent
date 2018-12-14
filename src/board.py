@@ -79,7 +79,6 @@ class Board:
     def dropPiece(self, piece):
         # start piece at very top of board
         piece.setY(0)
-
         # drop piece in column
         i = 0
         while self.isValidPosition(piece, adjY=i):
@@ -125,7 +124,4 @@ class Board:
         return numLinesRemoved
 
     def getReward(self):
-        numLinesRemoved = self.removeCompleteLines()
-        if numLinesRemoved == 0:
-            return 0
-        return numLinesRemoved
+        return self.removeCompleteLines()

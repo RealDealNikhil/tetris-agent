@@ -82,7 +82,7 @@ class Extractor:
         board = Board(len(newBoard), len(newBoard[0]), newBoard)
         piece = state[1]
         pG = PieceGenerator()
-        currPiece = pG.genPiece(piece.shape, piece.rotation)
+        currPiece = pG.genRandPieceFromShape(piece)
 
         currPiece.setAction(action)
 
