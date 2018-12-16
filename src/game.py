@@ -1,9 +1,4 @@
-# tetromino (a tetris clone)
-# By Al Sweigart al@inventwithpython.com
-# http://inventwithpython.com/pygame
-# Released under a "Simplified BSD" license
-
-import pygame, sys
+import pygame, sys, time
 from config import *
 from board import *
 from pieceGenerator import *
@@ -21,11 +16,11 @@ class Game:
         self.DISPLAYSURF = pygame.display.set_mode((WINDOWWIDTH, WINDOWHEIGHT))
         self.BASICFONT = pygame.font.Font('freesansbold.ttf', 18)
         self.BIGFONT = pygame.font.Font('freesansbold.ttf', 100)
-        pygame.display.set_caption('Tetromino')
+        pygame.display.set_caption('Tetroid')
 
         self.showTextScreen('Tetroid')
 
-    def runGame(self, agent, auto=False):
+    def runGame(self, agent, autoplay=False):
         # setup variables for the start of the game
         board = Board(self.BOARDWIDTH, self.BOARDHEIGHT)
         generator = PieceGenerator()
@@ -42,7 +37,7 @@ class Game:
 
         while True: # game loop
             # draw the current board
-            if not auto:
+            if not autoplay:
                 self.checkForQuit()
                 # drawing everything on the screen
                 self.DISPLAYSURF.fill(BGCOLOR)
@@ -50,8 +45,8 @@ class Game:
                 self.drawStatus(score)
                 self.drawPiece(fallingPiece, pixelx=150, pixely=10)
                 self.drawNextPiece(nextPiece)
-                while self.checkForKeyPress() == None:
-                    pygame.display.update()
+                # while self.checkForKeyPress() == None:
+                pygame.display.update()
 
             # update state
             state = nextState
@@ -66,10 +61,10 @@ class Game:
             board.addToBoard(fallingPiece)
 
             # draw interim board if we are playing so we can see what's happening
-            if not auto:
+            if not autoplay:
                 self.drawBoard(board.board)
-                while self.checkForKeyPress() == None:
-                    pygame.display.update()
+                # while self.checkForKeyPress() == None:
+                pygame.display.update()
 
             # update board and get reward
             reward = board.getReward()
@@ -91,6 +86,8 @@ class Game:
 
             # finally observe transition
             agent.observeTransition(state, action, nextState, reward, legalActions)
+
+            time.sleep(0.5)
 
     def makeTextObjs(self, text, font, color):
         surf = font.render(text, True, color)

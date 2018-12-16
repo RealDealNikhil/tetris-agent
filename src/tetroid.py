@@ -1,11 +1,16 @@
-# Tetromino (a Tetris clone)
-# By Al Sweigart al@inventwithpython.com
-# http://inventwithpython.com/pygame
-# Released under a "Simplified BSD" license
+"""
+Tetroid
+By Nikhil Suri and Soumil Singh
+
+Adapted from:
+Tetronimo (a tetris clone)
+By Al Sweigart al@inventwithpython.com
+http://inventwithpython.com/pygame
+Released under a "Simplified BSD" license
+"""
 
 import cPickle
 from game import *
-
 
 def main():
 
@@ -47,7 +52,7 @@ def main():
     # if play:
         # i = 0
         # while i < 1000:
-            # game.runGame(agent, auto=True)
+            # game.runGame(agent, autoplay=True)
             # if i % 1000 == 0:
                 # print game.weights
             # # game.showTextScreen("Game Over")
@@ -56,7 +61,6 @@ def main():
         # writeToFile("extractedWeights", game.weights)
 
     print agent.getValues()
-
 
 def runEpisodes(game, agent, progressTracker, inTraining):
     episodesInfo = []
@@ -68,7 +72,7 @@ def runEpisodes(game, agent, progressTracker, inTraining):
         check = agent.isInTesting
         infoString = "TESTING"
     while check():
-        game.runGame(agent, auto=True)
+        game.runGame(agent, autoplay=True)
         # game.runGame(agent)
         agent.recordGame()
         if agent.gamesSoFar % progressTracker == 0:
@@ -84,7 +88,6 @@ def runEpisodes(game, agent, progressTracker, inTraining):
             agent.startEpisode()
     return episodesInfo
 
-
 def printList(l):
     try:
         for el in l:
@@ -92,19 +95,16 @@ def printList(l):
     except TypeError:
         pass
 
-
 def writeToFile(fileName, d):
     filePath = "../values/" + fileName + ".pickle"
     with open(filePath, "wb") as f:
         cPickle.dump(d, f)
-
 
 def readDictFile(fileName):
     filePath = "../values/" + fileName + ".pickle"
     with open(filePath, "rb") as f:
         d = cPickle.load(f)
     return d
-
 
 def parseAgentArgs(args, willTrain):
     opts = {}
@@ -123,7 +123,6 @@ def parseAgentArgs(args, willTrain):
         opts['alpha'] = 0.0
 
     return opts
-
 
 def readCommand(argv):
     from optparse import OptionParser
@@ -192,11 +191,9 @@ def readCommand(argv):
     }
     return args
 
-
 def loadAgent(tetroid):
     module = __import__("agents")
     return getattr(module, tetroid)
-
 
 if __name__ == '__main__':
     main()
