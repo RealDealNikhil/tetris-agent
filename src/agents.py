@@ -4,7 +4,7 @@ from featureExtractor import *
 
 class RLAgent:
     def __init__(self, numTraining=10, numTesting=10, gamesPerEpisode=10, epsilon=0.5, alpha=0.5,
-            epsilonDelta=0, alphaDelta=0, gamma=1, values=None):
+            epsilonDelta=0, alphaDelta=0, gamma=1):
         self.epsilon = float(epsilon)
         self.alpha = float(alpha)
         self.epsilonDelta = float(epsilonDelta)
@@ -16,7 +16,9 @@ class RLAgent:
         self.episodesSoFar = 0
         self.gamesSoFar = 0
         self.episodeRewards = 0.0
-        self.values = values
+
+    def setValues(self, values={}):
+        pass
 
     def update(self, state, action, nextState, reward, legalActions):
         pass
@@ -74,16 +76,12 @@ class RandomAgent(RLAgent):
         action = random.choice(actions)
         return action
 
-class QLearningAgent(RLAgent):
+class ExactQAgent(RLAgent):
     def __init__(self, **args):
         RLAgent.__init__(self, **args)
-        self.setValues()
 
-    def setValues(self):
-        if self.values:
-            self.q_values = util.Counter(self.values)
-        else:
-            self.q_values = util.Counter()
+    def setValues(self, values={}):
+        self.q_values = util.Counter(values)
 
     def getValues(self):
         return self.q_values
@@ -187,17 +185,14 @@ class QLearningAgent(RLAgent):
         topLine = board.getTopLine()
         return (topLine, currentPiece.shape, nextPiece.shape)
 
-class ApproximateQAgent(QLearningAgent):
+class ApproximateQAgent(ExactQAgent):
     def __init__(self, **args):
         self.featExtractor = Extractor()
-        QLearningAgent.__init__(self, **args)
-        print self.weights
+        ExactQAgent.__init__(self, **args)
 
-    def setValues(self):
-        if self.values:
-            self.weights = util.Counter(self.values)
-        else:
-            self.weights = util.Counter()
+    def setValues(self, values={}):
+        self.weights = util.Counter(values)
+        print self.weights
 
     def getValues(self):
         return self.weights

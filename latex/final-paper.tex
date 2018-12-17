@@ -1,5 +1,6 @@
 \documentclass[11pt]{article}
 \usepackage{common}
+\usepackage{dirtree}
 \pagestyle{plain}
 \title{CS182 Final Project}
 \author{Nikhil Suri and Soumil Singh}
@@ -27,6 +28,11 @@ addressed, and the relation of these problems and issues to the
 techniques and ideas covered in the course.
 
 The initial goal in undertaking this project was to investigate the possible application of Q-learning for the game of Tetris. For an explanation of the rules of Tetris, read appendix (insert appendix). More specifically, we wanted to apply Q-learning techniques to create an agent which could learn how to optimally play the game i.e. optimally 'clear lines' and survive for as long as possible. Our goal was to compare the effectiveness of exact Q-learning techniques (model-free learning) against approximate Q-learning techniques (model-based learning) for different specifications of the game, that is, for different sizes of the game board. We hypothesised that in general an approximate Q-learning learning agent would perform better than an exact Q-learning agent predicated on the reasoning that our defined state-space would be very large, and thus our exact Q-learning agent wouldn't sufficiently explore the state-space to conduct its learning. To elucidate this comparison, we also had the goal of comparing the effectiveness of the two different agents for different boards (i.e. differently sized state-spaces), different learning parameters (i.e. different learning rates $\alpha$ and different random-action selection rates for epsilon greedy approach $\epsilon$), and different heuristics/features for the approximate Q-learning agent. After conducting analysis on these manifold aspects, we have the goal of drawing conclusions regarding what an optimal Q-learning agent for this game might look like.
+
+The Q-learning algorithms we applied, detailed in the Approach section, were fundamentally the same algorithms we learnt in class. However, we created our own representation for states and actions for the tetris game. Furthermore, we defined our own features for approximate Q-learning, and implemented our own method for testing both agents. Our baseline agent we tested against was the random-action agent, which picks any legal action with equal probability. We utilised an existing pygame version of tetris, with a pre-defined implementation of the tetris board, pieces, and user-interaction (key-board presses) functionality; we built upon this framework to implement our Q-learning agents by defining our own representation for states, legal actions, rewards, storage of Q-values and so forth.
+
+\subsection{Citations}
+
 
 \bigskip
 
@@ -74,7 +80,7 @@ For a typical board of size 10x20 the number of top line configurations will be
 $$20^{10} - 20 = 10239999999980$$
 This is still quite large. However, for a smaller board of size 5x8 the number of top line configurations will be
 $$8^5 - 8 = 32760$$
-Now this is a feasible state space size! We can make this even smaller if we consider the effect of "normalization". By normalization, we mean that we can "normalize" a (row, col) top line of $(2,0),(2,1),(1,2),(1,3),(2,4)$ to $(1,0),(1,1),(0,2),(0,3),(1,4)$. The key observation that leads to normalization is that from the \textit{perspective of placing pieces}, the two top lines are the same. We would want the same action that occurs in the latter top line to occur in former top line, because the agent should be selecting the optimal action in both cases. Normalization therefore has the effect of always reducing a top line to one which To calculate the effect which normalization has, let us consider the case where there is one empty column on the board. The number top lines we can have is
+Now this is a feasible state space size! We can make this even smaller if we consider the effect of "normalization". By normalization, we mean that we can "normalize" a (row, col) top line of $(2,0),(2,1),(1,2),(1,3),(2,4)$ to $(1,0),(1,1),(0,2),(0,3),(1,4)$. The key observation that leads to normalization is that from the \textit{perspective of placing pieces}, the two top lines are the same. We would want the same action that occurs in the latter top line to occur in former top line, because the agent should be selecting the optimal action in both cases. Normalization therefore has the effect of always reducing a top line to one which has at least one column which is empty. To calculate the effect which normalization has, let us consider the case where there is one empty column on the board. The number top lines we can have is
 $$h^{w-1}\binom{w}{1}$$
 If there are two empty columns, the number of top lines we can have is
 $$h^{w-2}\binom{w}{2}$$
@@ -92,16 +98,6 @@ Although large, this state space is still manageable for exact learning. For app
 Given a state, we have defined the set of legal actions for that state as (rotation, column) pairs. Here, rotation is a number that represents which rotation a falling piece is in. Column is a number that represents which column we are dropping the piece now, with respect to the top left corner of that piece in its rotation. Once an action is chosen, we will set the rotation of the falling piece, move it over to the column which we want to drop it down, and drop it as far down as it can go in that column. The maximum number of rotations for any piece is 4. In a board of width $b$, the maximum number of columns which we can drop a piece down is  $b$. Therefore, there are at most $4b$ actions for every piece. Since there are 7 different pieces in Tetris, the number of different actions there are is at most $28b$. We use the same action set for approximate learning as we do for exact learning.
 
 \section{Approach}
-
-Data structures used for board representation, piece representations, state and actions representations
-Exact Q learning algorithm
-Approx Q learning algorithm
-Storage of learned q values in pickle files (using the util.counter class from assignments)
-Talk about heuristics we used more in detail, explain reasoning behind them
-squared hole size heuristic and DFS
-Talk about old model vs new model and why we had to switch over to new model (regarding living penalty, death penalty, etc)
-
-
 A clear specification of the algorithm(s) you used and a description
 of the main data structures in the implementation. Include a
 discussion of any details of the algorithm that were not in the
@@ -109,16 +105,50 @@ published paper(s) that formed the basis of your implementation. A
 reader should be able to reconstruct and verify your work from reading
 your paper.
 
+\subsection{Game Implementation}
+The implementation of the game itself is adapted from "Tetronimo" (a Tetris clone) by Al Sweigart. Many of the functions used to draw objects on the screen and manipulate the game board (such as clearing lines and dropping pieces) were written by him. We adapted the game to be Object-Oriented: each piece object is generated by an object called the "piece generator". The board object then has functions to manipulate the board itself. The game board itself is stored as a column-wise list of lists. For our Exact Learning agent, we store states as tuples of the board's top line, the shape of the falling piece, and the shape of the next piece. For our Approximate Learning agent, we store states as tuples of the current board, the shape of the falling piece, and the shape of the next piece. For both agents, actions are stored as tuples of (rotation, column) pairs.
+
+\subsection{Algorithms}
+The main algorithms that we used were the Exact Q Learning and Approximate Q Learning algorithms. As defined in the lecture notes, the Exact Q Learning algorithm stores a lookup table of (state, action) pairs with their associated Q-values. To update Q-values, we use the following algorithm where $s$ and $a$ are the previous state and action, $s'$ is the new state, $r$ is the observed reward, $\delta$ is the discount factor, and $\alpha$ is the learning rate:
 \begin{algorithm}
   \begin{algorithmic}
-    \Procedure{MyAlgorithm}{$b$}
-    \State{$a \gets 10$}
+    \Procedure{updateQValues}{$s, a, s', r$}
+        \State{$sample \gets r + \delta\max_{a'}Q(s', a')$}
+        \State{$Q(s,a) \gets Q(s,a)(1 - \alpha) + \alpha\cdot sample $}
     \EndProcedure{}
   \end{algorithmic}
-  \caption{Here is the algorithm.}
-\end{algorithm}
+  \caption{Exact Q Learning Q-value Update}
+\end{algorithm}\\
+As defined in the lecture notes, the approximate Q Learning algorithm stores a table of weights associated with pre-defined features. These features are obtained by evaluating certain heuristics on a (state, action) pair. The Q-value of a state thus becomes the dot product of the feature and weight vectors:
+$$Q(s,a) = w_1f_1(s,a) + w_2f_2(s,a) + \ldots + w_nf_n(s,a)$$
+To update values for the weights, we use the following algorithm where where $s$ and $a$ are the previous state and action, $s'$ is the new state, $r$ is the observed reward, $\delta$ is the discount factor, and $\alpha$ is the learning rate:
+\begin{algorithm}
+  \begin{algorithmic}
+    \Procedure{updateWeights}{$s, a, s', r$}
+        \State{$difference \gets \alpha(r + \delta\max_{a'}Q(s', a') - Q(s,a))$}
+        \For{i = 1:n}
+            \State{$w_i \gets w_i + f_i(s,a)\cdot difference $}
+        \EndFor{}
+    \EndProcedure{}
+  \end{algorithmic}
+  \caption{Approximate Q Learning Weights Update}
+\end{algorithm}\\
+For our implementation, we adopted much of the code we used for problem set 3 on reinforcement learning in pacman. To store our Q-value and weight lookup tables, we used the \texttt{Counter} object defined in \texttt{util.py}.
 
+\subsection{Rewards}
+We trained and tested our agents on two different reward models.
 
+\subsection{Heuristics}
+We defined and tested several heuristics for approximate learning. In our feature extractor, we calculated features given a state-action pair. To do this, we made a copy of the current board-representation (so that by performing the given 'action', the actual board was not edited) and performed the action on this copy. Then, we calculated heuristics on this board-copy to assess what our 'features' would be if we performed a particular action on a particular current board representation. Thus, given a (state, action) pair, our heuristics  were calculated as follows:
+\begin{enumerate}
+    \item \textbf{Highest Point:}
+    This refers to the highest point on the current 'stack' on the board, where the stack refers to the amalgamation of pieces below the empty space at the top of the board. We anticipated that our approximate agent would learn negative weights for this feature, because a larger 'highest point' would, by proxy, imply a higher 'piece stack', which would mean our agent is closer to breaching the top of the board and dying. (we should get some images to display these)
+    \item \textbf{Holes:}
+    The number of 'Holes' refers to the number of blank-spaces below the top line of our 'piece stack'. They define the empty spaces that are currently inaccessible to our agent, i.e. there exists a filled space at some height above the height of the 'hole'. We anticipated that our approximate Q-learning agent would learn negative weights for this feature, because a greater number of holes implies our 'piece-stack' is not optimally compressed; this means that it is 1) more likey that our 'piece-stack' is taller, and 2) future line-clears could be more difficult for our agent. In both cases, it would seem our agent should seek to minimize this feature.
+    \item \textbf{Lines Cleared:}
+    This feature refers to the number of complete Lines that would be cleared after taking the specified action $\alpha$, where a 'complete line' refers to a row on the tetris board in which every space is filled by a piece.
+    \item \textbf{Height Difference:}
+\end{enumerate}
 
 \section{Experiments}
 
@@ -146,7 +176,6 @@ evaluation. Discuss what you learned from the implementation.
 
 
 \subsection{Results}
-
 What were results for exact q learning on the old model? (use the graph we created for the poster)
 what were results for approx q learning on the old model? (should all be bad results)
 results for exact q learning on the new model?
@@ -166,10 +195,39 @@ Summary of approach and results. Major takeaways? Things you could improve in fu
 \appendix
 
 \section{System Description}
+The main file structure of our project is as follows:
 
-Go through command line arguments. Talk about automated testing/training system.
+\bigskip
 
- Appendix 1 – A clear description of how to use your system and how to generate the output you discussed in the write-up. \emph{The teaching staff must be able to run your system.}
+\dirtree{%
+    .1 tetris-agent/.
+    .2 docs/.
+    .2 img/.
+    .2 latex/.
+    .2 src/.
+    .2 values/.
+}
+
+\bigskip
+
+The \texttt{docs} folder contains PDF documents for our project proposal, update, and final report. The \texttt{img} folder contains any images (including graph images) that we have included in any of our PDF documents. The \texttt{latex} folder contains latex files used to generate the PDF documents. All of our code resides in the \texttt{src} folder, and the \texttt{.pickle} files that we used to store learned Q-values and weights for training sessions are held in the \texttt{values} folder.
+
+\bigskip
+
+To run our code, first a user must \texttt{cd} into the \texttt{src} directory. The driver program for training, testing, and playing agents is \texttt{tetroid.py}. Much of our system is adapted from problem set 3 (on reinforcement learning), so there is a host of command line options that can be used. We support the following options (a detailed usage string can also be generated by running \texttt{python tetroid.py --help}):
+\begin{enumerate}
+    \item \texttt{-h, --help}: This option generates the help message and exits the program.
+    \item \texttt{-a AGENT, --agent=AGENT}: Selects the agent type to use. There are 3 agents to choose from: \texttt{RandomAgent}, \texttt{ExactQAgent}, and \texttt{ApproximateQAgent}. If this option is not provided, then the default agent that will be selected is \texttt{RandomAgent}.
+    \item \texttt{-g AGENTARGS, --agentArgs=AGENTARGS}: This specifies initial values to be sent to the agent. Initial values should be specified only for agent options which are different than their default values. These should be comma separated. e.g. \texttt{opt1=val1,opt2,opt3=val3}. The options that can be set for an agent are (written with their default values) \texttt{numTraining=10, numTesting=10, gamesPerEpisode=10, epsilon=0.5, alpha=0.5, epsilonDelta=0, alphaDelta=0, gamma=1}. \texttt{numTraining} and \texttt{numTesting} set the number of training and testing episodes to run. \texttt{gamesPerEpisode} sets the number of games to play per training/testing episode. \texttt{epsilon}, \texttt{alpha}, and \texttt{gamma} set the learning parameters for the agent. \texttt{epsilonDelta} and \texttt{alphaDelta} set the per-episode decrease rate for \texttt{alpha} and \texttt{epsilon}.
+    \item \texttt{-x FILENAME, --export=FILENAME}: Setting this option will export the learned q-values/weights to \texttt{tetris-agent/values/FILENAME.pickle} after training.
+    \item \texttt{-l FILENAME, --load=FILENAME}: Setting this option will load in previously learned q-values/weights from \texttt{tetris-agent/values/FILENAME.pickle}. We can use these loaded values as a starting point for further training, testing, or empirically evaluating the agent by watching it play.
+    \item \texttt{--train}: Train the agent. This is set to \texttt{false} by default.
+    \item \texttt{--test}: Test the agent. This is set to \texttt{false} by default.
+    \item \texttt{-p PROGRESSTRACKER, --progress=PROGRESSTRACKER}: This will set the rate at which we show the completion of games during training or testing sessions. This is set to 1 by default.
+    \item \texttt{-n, --no-play}: By default, the agent will begin playing the game after training and testing is over. This flag will tell the system to NOT show the agent playing the game.
+    \item \texttt{-b BOARD\_DIM, --board=BOARD\_DIM}: Set the board dimensions. These should be given as \texttt{WIDTHxHEIGHT}. The board dimensions are set by default to be 10x20.
+\end{enumerate}
+Some example
 
 \section{Group Makeup}
 
@@ -177,7 +235,7 @@ Nikhil Suri
 Soumil Singh
 Division of work was even
 
- Appendix 2 – A list of each project participant and that
+Appendix 2 – A list of each project participant and that
 participant’s contributions to the project. If the division of work
 varies significantly from the project proposal, provide a brief
 explanation.  Your code should be clearly documented.

@@ -118,12 +118,12 @@ def readCommand(argv):
 
     # THIS USAGE STRING IS STILL IN PROGRESS AND SHOULD BE DISREGARDED UNTIL COMPLETION
     usageStr = """
-    USAGE:      python tetris.py <options>
+    USAGE:      python tetroid.py <options>
     EXAMPLES:   (1) python tetroid.py
                     - use the Random Agent
-                (2) python tetroid.py --agent QLearningAgent --agentArgs numTraining=5
-                OR python tetroid.py -a QLearningAgent -g numTraining=5
-                    - begins training tetroid agent with 5 sets of training episodes
+                (2) python tetroid.py --agent=ExactQAgent --agentArgs=numTraining=5,numTesting=5,gamesPerEpisode=100 --train --test
+                OR python tetroid.py -a ExactQAgent -g numTraining=5,numTesting=5,gamesPerEpisode=100 --train --test
+                    - begins training an exact Q Learning agent with 5 sets of training and testing episodes and 100 games per episode.
     """
 
     parser = OptionParser(usageStr)
@@ -158,12 +158,13 @@ def readCommand(argv):
 
     agentOpts = parseAgentArgs(options.agentArgs, options.train)
     tetroidType = loadAgent(options.agent)
+    tetroid = tetroidType(**agentOpts)
 
     if options.dictFile:
         values = readDictFile(options.dictFile)
-        tetroid = tetroidType(values=values, **agentOpts)
+        tetroid.setValues(values=values)
     else:
-        tetroid = tetroidType(**agentOpts)
+        tetroid.setValues()
 
     board_dim = options.board_dim.split('x')
     if len(board_dim) != 2:
