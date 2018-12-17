@@ -47,6 +47,13 @@ class Extractor:
                 sumSquares += holes ** 2
         return sumSquares
 
+    def getAggregateHeight(self, topLine, height):
+        agHeight = 0
+        for row, _ in topLine:
+            h = height - row - 1
+            agHeight += h
+        return agHeight
+
     def getHighestPoint(self, topLine, height):
         highestPoint = float('inf')
         for i in range(len(topLine)):
@@ -103,7 +110,8 @@ class Extractor:
         # features["numLinesRemoved"] = numLinesRemoved
 
         topLine = board.getTopLine(normalize=False)
-        features["highestPoint"] = self.getHighestPoint(topLine, board.height)
+        features["aggregateHeight"] = self.getAggregateHeight(topLine, board.height)
+        # features["highestPoint"] = self.getHighestPoint(topLine, board.height)
         features["avgHeightDiff"] = self.getAvgHeightDiff(topLine)
 
         blankSpaceSet = self.getHoles(board.board)

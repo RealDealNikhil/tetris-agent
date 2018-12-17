@@ -194,18 +194,10 @@ class ApproximateQAgent(QLearningAgent):
         print self.weights
 
     def setValues(self):
-        # if self.values:
-            # self.weights = util.Counter(self.values)
-        # else:
-            # self.weights = util.Counter()
-        # preset = {
-                # 'numHoles': -10,
-                # 'highestPoint': -10,
-                # 'numLinesRemoved': 100,
-                # 'avgHeightDiff': -10
-                # }
-        preset = {'numHoles': -0.973771496261925, 'highestPoint': -0.5661148282972845, 'bias': -0.02813138379002768, 'avgHeightDiff': -0.03046703139973776}
-        self.weights = util.Counter(preset)
+        if self.values:
+            self.weights = util.Counter(self.values)
+        else:
+            self.weights = util.Counter()
 
     def getValues(self):
         return self.weights

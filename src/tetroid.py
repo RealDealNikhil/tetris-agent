@@ -49,20 +49,6 @@ def main():
             game.runGame(agent)
             game.showTextScreen("Game Over")
 
-    # FOR EXTRACTING POLICY
-    # if play:
-        # i = 0
-        # while i < 1000:
-            # game.runGame(agent, autoplay=True)
-            # if i % 1000 == 0:
-                # print game.weights
-            # # game.showTextScreen("Game Over")
-            # i += 1
-        # print game.weights
-        # writeToFile("extractedWeights", game.weights)
-
-    # print agent.getValues()
-
 def runEpisodes(game, agent, progressTracker, inTraining):
     episodesInfo = []
     agent.startEpisode()
@@ -78,7 +64,7 @@ def runEpisodes(game, agent, progressTracker, inTraining):
         agent.recordGame()
         if agent.gamesSoFar % progressTracker == 0:
             print agent.gamesSoFar
-            # print agent.getValues()
+            print agent.getValues()
         if agent.shouldStopEpisode():
             agent.stopEpisode()
             # shows rewards in terms of line clears: penalty for losing a game is -0.5, line clears each add 0.001 to score
