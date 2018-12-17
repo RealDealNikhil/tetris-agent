@@ -87,7 +87,8 @@ class Game:
             # finally observe transition
             agent.observeTransition(state, action, nextState, reward, legalActions)
 
-            time.sleep(0.5)
+            if not autoplay:
+                time.sleep(0.5)
 
     def makeTextObjs(self, text, font, color):
         surf = font.render(text, True, color)

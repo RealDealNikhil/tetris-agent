@@ -1,12 +1,22 @@
 \documentclass[11pt]{article}
 \usepackage{common}
-\title{Project Template}
-\author{Richard Bellman and Alan Turing}
+\pagestyle{plain}
+\title{CS182 Final Project}
+\author{Nikhil Suri and Soumil Singh}
 \begin{document}
 \maketitle{}
 
 
 \section{Introduction}
+
+Talk about
+learning in large state spaces and tetris
+Purpose:
+Investigate the application of Q-learning to tetris
+Goals: comparing the effectiveness of exact/approximate Q-learning with different heuristics, different boards, parameters
+scope: random agent, exact agent, approximate agent, different heuristics and ability to train on different board sizes
+references: tetris clone we got from online
+algorithms: devised our own representation of states and actions and applied algorithms we learned in class
 
 A description of the purpose, goals, and scope of your system or
 empirical investigation.  You should include references to papers you
@@ -16,18 +26,81 @@ algorithm or devised a new one, the range of problems and issues you
 addressed, and the relation of these problems and issues to the
 techniques and ideas covered in the course.
 
-\section{Background and Related Work}
+The initial goal in undertaking this project was to investigate the possible application of Q-learning for the game of Tetris. For an explanation of the rules of Tetris, read appendix (insert appendix). More specifically, we wanted to apply Q-learning techniques to create an agent which could learn how to optimally play the game i.e. optimally 'clear lines' and survive for as long as possible. Our goal was to compare the effectiveness of exact Q-learning techniques (model-free learning) against approximate Q-learning techniques (model-based learning) for different specifications of the game, that is, for different sizes of the game board. We hypothesised that in general an approximate Q-learning learning agent would perform better than an exact Q-learning agent predicated on the reasoning that our defined state-space would be very large, and thus our exact Q-learning agent wouldn't sufficiently explore the state-space to conduct its learning. To elucidate this comparison, we also had the goal of comparing the effectiveness of the two different agents for different boards (i.e. differently sized state-spaces), different learning parameters (i.e. different learning rates $\alpha$ and different random-action selection rates for epsilon greedy approach $\epsilon$), and different heuristics/features for the approximate Q-learning agent. After conducting analysis on these manifold aspects, we have the goal of drawing conclusions regarding what an optimal Q-learning agent for this game might look like.
+
+\bigskip
+
+To apply these Q-learning approaches to tetris, we used an existing pygame representation of the tetris game; thus, we had access to code which defined the board, pieces, keyboard-moves, and all visual representation. We then created our own representations for states and actions (the definitions of which can be found in the section titled 'problem specification') for which our agents would learn with. We then applied the feature based and exact Q-learning algorithms we learnt during this course. We utilised a similar structure to that in the Reinforcement Learning problem set to define the 'RLAgent' class.
+
+\section{Scope}
+
+\subsection{Background and Related Work}
+
+Tetris clone
+look at papers we used for the project proposal.
 
 For instance, \cite{hochreiter1997long}.
 
 
-\section{Problem Specification}
+\subsection{Problem Specification}
+The specific problem that we are investigating is how well reinforcement learning, through exact and approximate q learning, can be applied to the game of Tetris. To apply reinforcement learning to Tetris, we must have a formal definition of the game, the state space, and the action set of Tetris.
 
-A clear description of the problem you are solving in both general terms 
-and how you've mapped it to a formal problem specification. 
+\subsubsection{Game}
+The game of Tetris is played on a board of width $w$ and height $h$. This board initially starts off empty. During each turn, the player is given a piece to place on the board that begins falling from the top of the board. The player can rotate and move this falling piece from side to side. As the player places more pieces on the board, the stack of pieces rises higher and higher. If the stack of pieces rises too high and the player cannot place a piece anywhere on the board, then the game is over. The player attempts to keep the stack of pieces on the board low by clearing lines: every time the player fills an entire row of blocks, that line is cleared from the game board and all blocks above that row shift down. The player also scores points by clearing lines. The goal of the game is score as many points as possible. This is done by clearing lines, and thus by continuing to play for as long as possible.
 
+\bigskip
+
+In addition to knowing the entire board configuration and falling piece, the player is told what the next piece will be (pieces are assumed to spawn randomly). The player also has the option to place a piece in "reserve" and save it for later. The idea behind this is that by putting a piece in reserve, the player can plan to use the piece to clear lines later or temporarily escape from a situation where there are no locations that the player deems to be "good" to place the piece.
+
+\bigskip
+
+For our project, we have slightly simplified Tetris. In real Tetris, part of the challenge of placing pieces on the board (in addition to choosing the best rotation and column to drop the piece in) is actually getting the piece to the column in which you want to drop it. Pieces spawn in the center at the top of the board and fall at a certain rate. The rate at which pieces fall is determined by how many lines the player has cleared. Once a falling piece touches the stack of pieces already on the board, it becomes stuck, and the player can no longer move it. In some versions of Tetris, there is additional complexity where, for a short time after the piece touches the stack, the player can continue to move it from side to side and rotate it. Currently, we do not support these features in our implementation of the game. We also currently do not allow the agent to hold a piece in reserve. In our implementation, the agent is simply given a piece which it can place anywhere atop the current stack of pieces on the board.
+
+\subsubsection{State Space}
+Tetris has a huge state space. Each square on the board can either have a block in it or not. If we let $w$ be the width of the board and $h$ be the height of the board, then the number of possible board configurations is $$2^{w\cdot h}$$
+Now, an important observation is that we will never reach a board configuration where there are rows which are full of blocks (these rows will be cleared, according to the rules of Tetris). Therefore, this is a counting problem: the number of board configurations which have a single row of full blocks is
+$$\binom{h}{1}2^{w\cdot(h-1)}$$
+The number of configurations which have 2 rows of full blocks is
+$$\binom{h}{2}2^{w\cdot(h-2)}$$
+and so on. Therefore, in reality the number of possible states is
+$$2^{wh} - \sum_{k=1}^{h}\binom{h}{k}2^{w\cdot(h-k)}$$
+However, we note that this reduction is really of no help. A typical board in Tetris is 10x20 squares, which by our calculation has
+$$2^{200} - \sum_{k=1}^{20}\binom{20}{k}2^{10\cdot(20-k)}=1575259648227583387903265739476252776198605528180667457712127$$
+possible states. Even on a smaller board with dimensions 5x8, we will still have
+$$2^{40} - \sum_{k=1}^{8}\binom{8}{k}2^{5\cdot(8-k)}=792614637311$$
+possible states. Clearly, training an exact Q Learning agent which stores entire board configurations as states is not feasible for Tetris. We must also consider that a state does not consist solely of a board configuration; in Tetris we are also know what the falling piece and next piece are. Since there are 7 pieces in Tetris, our state space is already larger by a factor of 49. Therefore, an exact Q Learning agent requires a much more concise way of representing states. Here, we introduce the concept of the "top line" of a board. The top line of a board is the $w$ (where $w$ is the width of the board) free spaces (not occupied by blocks) which are at the top of each column of the board. This greatly reduces our state space. To count the number of possible top line configurations that there are in a board of width $w$ and height $h$, let us first consider the number of ways to place blocks in a single column. In a single column, there are $h$ ways to arrange blocks ($h$ locations to place a block). In 2 columns, there are $h^2$ ways to arrange blocks. We need to correct for counting complete rows. The number of permutations where all of the blocks are in the same row is $h$. Therefore, the total number of top line configurations that we will have is
+$$h^w - h$$
+For a typical board of size 10x20 the number of top line configurations will be
+$$20^{10} - 20 = 10239999999980$$
+This is still quite large. However, for a smaller board of size 5x8 the number of top line configurations will be
+$$8^5 - 8 = 32760$$
+Now this is a feasible state space size! We can make this even smaller if we consider the effect of "normalization". By normalization, we mean that we can "normalize" a (row, col) top line of $(2,0),(2,1),(1,2),(1,3),(2,4)$ to $(1,0),(1,1),(0,2),(0,3),(1,4)$. The key observation that leads to normalization is that from the \textit{perspective of placing pieces}, the two top lines are the same. We would want the same action that occurs in the latter top line to occur in former top line, because the agent should be selecting the optimal action in both cases. Normalization therefore has the effect of always reducing a top line to one which To calculate the effect which normalization has, let us consider the case where there is one empty column on the board. The number top lines we can have is
+$$h^{w-1}\binom{w}{1}$$
+If there are two empty columns, the number of top lines we can have is
+$$h^{w-2}\binom{w}{2}$$
+Therefore, with normalization, the total number of top lines we can have for a board with width $w$ and height $h$ is
+$$\sum_{k=1}^{w-1}h^{w-k}\binom{w}{k}$$
+On a typical board of size 10x20 the number of normalized top lines will be
+$$\sum_{k=1}^{9} 20^{10-k}\binom{10}{k} = 6439880978200$$
+On the smaller board of size 5x8 the number of normalized top lines will be
+$$\sum_{k=1}^{4} 8^{5-k}\binom{5}{k} = 26280$$
+Adding in the falling piece and next piece, we see that on a board of size 5x8 the size of the state space will be
+$$(49)(26280) = 1287720$$
+Although large, this state space is still manageable for exact learning. For approximate learning, we do not need to worry about reducing the state space so much. In approximate learning, we do not need to store a table of (state, action) pairs. We determine the value of a state by using heuristics which are calculated based on the current configuration of the entire board, the falling piece, and the next piece. Therefore, our states for approximate q learning are simply the entire board configuration, the falling piece, and the next piece.
+
+\subsubsection{Action Set}
+Given a state, we have defined the set of legal actions for that state as (rotation, column) pairs. Here, rotation is a number that represents which rotation a falling piece is in. Column is a number that represents which column we are dropping the piece now, with respect to the top left corner of that piece in its rotation. Once an action is chosen, we will set the rotation of the falling piece, move it over to the column which we want to drop it down, and drop it as far down as it can go in that column. The maximum number of rotations for any piece is 4. In a board of width $b$, the maximum number of columns which we can drop a piece down is  $b$. Therefore, there are at most $4b$ actions for every piece. Since there are 7 different pieces in Tetris, the number of different actions there are is at most $28b$. We use the same action set for approximate learning as we do for exact learning.
 
 \section{Approach}
+
+Data structures used for board representation, piece representations, state and actions representations
+Exact Q learning algorithm
+Approx Q learning algorithm
+Storage of learned q values in pickle files (using the util.counter class from assignments)
+Talk about heuristics we used more in detail, explain reasoning behind them
+squared hole size heuristic and DFS
+Talk about old model vs new model and why we had to switch over to new model (regarding living penalty, death penalty, etc)
+
 
 A clear specification of the algorithm(s) you used and a description
 of the main data structures in the implementation. Include a
@@ -48,6 +121,9 @@ your paper.
 
 
 \section{Experiments}
+
+Talk about how we went about conducting experiments (varying parameters, varying board sizes, exact vs. approx, using pickle files because training time can be very long, printing out average rewards over training/testing periods)
+
 Analysis, evaluation, and critique of the algorithm and your
 implementation. Include a description of the testing data you used and
 a discussion of examples that illustrate major features of your
@@ -71,29 +147,43 @@ evaluation. Discuss what you learned from the implementation.
 
 \subsection{Results}
 
+What were results for exact q learning on the old model? (use the graph we created for the poster)
+what were results for approx q learning on the old model? (should all be bad results)
+results for exact q learning on the new model?
+results for approx q learning on the new model?
+These should all have graph associated with them:
+- iterations vs rewards for different learning parameters
+- approx vs exact on iterations vs rewards
+- iterations vs rewards for different board sizes (for exact and approx)
+
  For algorithm-comparison projects: a section reporting empirical comparison results preferably presented graphically.
 
 
 \section{Discussion}
 
-Summary of approach and results. Major takeaways? Things you could improve in future work?
+Summary of approach and results. Major takeaways? Things you could improve in future work? Ways to extend the project?
 
 \appendix
 
 \section{System Description}
 
+Go through command line arguments. Talk about automated testing/training system.
+
  Appendix 1 – A clear description of how to use your system and how to generate the output you discussed in the write-up. \emph{The teaching staff must be able to run your system.}
 
 \section{Group Makeup}
 
+Nikhil Suri
+Soumil Singh
+Division of work was even
+
  Appendix 2 – A list of each project participant and that
 participant’s contributions to the project. If the division of work
 varies significantly from the project proposal, provide a brief
-explanation.  Your code should be clearly documented. 
+explanation.  Your code should be clearly documented.
 
 
-
-\bibliographystyle{plain} 
-\bibliography{project-template}
+\bibliographystyle{plain}
+\bibliography{final-project}
 
 \end{document}

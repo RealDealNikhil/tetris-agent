@@ -45,8 +45,9 @@ def main():
     printList(testingInfo)
 
     if play:
-        game.runGame(agent)
-        game.showTextScreen("Game Over")
+        while True:
+            game.runGame(agent)
+            game.showTextScreen("Game Over")
 
     # FOR EXTRACTING POLICY
     # if play:
@@ -60,7 +61,7 @@ def main():
         # print game.weights
         # writeToFile("extractedWeights", game.weights)
 
-    print agent.getValues()
+    # print agent.getValues()
 
 def runEpisodes(game, agent, progressTracker, inTraining):
     episodesInfo = []
@@ -77,10 +78,12 @@ def runEpisodes(game, agent, progressTracker, inTraining):
         agent.recordGame()
         if agent.gamesSoFar % progressTracker == 0:
             print agent.gamesSoFar
-            print agent.getValues()
+            # print agent.getValues()
         if agent.shouldStopEpisode():
             agent.stopEpisode()
-            averageRewards = agent.episodeRewards / agent.gamesPerEpisode
+            # shows rewards in terms of line clears: penalty for losing a game is -0.5, line clears each add 0.001 to score
+            averageRewards = (agent.episodeRewards / agent.gamesPerEpisode + 0.5) * 1000
+            print averageRewards
             gameSet = str(agent.gamesSoFar - agent.gamesPerEpisode) + "-" + str(agent.gamesSoFar)
             episodesInfo.append(
                 infoString + " GAMES " + gameSet + "\t\t" +
