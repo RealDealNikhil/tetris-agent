@@ -67,11 +67,14 @@ def runEpisodes(game, agent, progressTracker, inTraining):
             # print agent.getValues()
         if agent.shouldStopEpisode():
             agent.stopEpisode()
-            # model 1
-            averageRewards = agent.episodeRewards / agent.gamesPerEpisode
+
+            # models 1 and 3 (just show rewards, b/c hard to extract exact number of line clears with living penalty)
+            # averageRewards = agent.episodeRewards / agent.gamesPerEpisode
+
             # model 2
             # shows rewards in terms of line clears: penalty for losing a game is -0.5, line clears each add 0.001 to score
-            # averageRewards = (agent.episodeRewards / agent.gamesPerEpisode + 0.5) * 1000
+            averageRewards = (agent.episodeRewards / agent.gamesPerEpisode + 0.5) * 1000
+
             print averageRewards
             gameSet = str(agent.gamesSoFar - agent.gamesPerEpisode) + "-" + str(agent.gamesSoFar)
             episodesInfo.append(
