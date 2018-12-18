@@ -124,4 +124,14 @@ class Board:
         return numLinesRemoved
 
     def getReward(self):
-        return self.removeCompleteLines() / float(1000)
+        numLinesRemoved = self.removeCompleteLines()
+        # model 1
+        if numLinesRemoved == 0:
+            return -1
+        return numLinesRemoved * 1000
+        # model 2
+            # return numLinesRemoved / float(1000)
+        # model 3
+        # if numLinesRemoved == 0:
+            # return -0.001 / (self.width)
+        # return numLinesRemoved / float(1000)
