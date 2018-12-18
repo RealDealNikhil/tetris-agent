@@ -64,7 +64,7 @@ def runEpisodes(game, agent, progressTracker, inTraining):
         agent.recordGame()
         if agent.gamesSoFar % progressTracker == 0:
             print agent.gamesSoFar
-            # print agent.getValues()
+            print agent.getValues()
         if agent.shouldStopEpisode():
             agent.stopEpisode()
 
