@@ -1,3 +1,7 @@
+"""
+Feature Extractors.
+"""
+
 import util, copy
 from board import *
 from pieceGenerator import *

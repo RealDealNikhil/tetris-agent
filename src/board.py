@@ -124,6 +124,9 @@ class Board:
         return numLinesRemoved
 
     def getReward(self):
+        """
+        Get reward for changing state based on the rewards model we are testing/training.
+        """
         numLinesRemoved = self.removeCompleteLines()
 
         # model 1

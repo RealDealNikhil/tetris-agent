@@ -13,6 +13,9 @@ import cPickle
 from game import *
 
 def main():
+    """
+    Driver function. Reads arguments and runs training, testing, and game-playing.
+    """
 
     args = readCommand( sys.argv[1:] ) # Set game options for agent based on input
     agent = args['agent']
@@ -44,12 +47,17 @@ def main():
     printList(trainingInfo)
     printList(testingInfo)
 
+    # show agent playing the game
     if play:
         while True:
             game.runGame(agent)
             game.showTextScreen("Game Over")
 
 def runEpisodes(game, agent, progressTracker, inTraining):
+    """
+    Run training or testing episodes for the agent.
+    Keep track of progress and average rewards.
+    """
     episodesInfo = []
     agent.startEpisode()
     if inTraining:
@@ -64,7 +72,7 @@ def runEpisodes(game, agent, progressTracker, inTraining):
         agent.recordGame()
         if agent.gamesSoFar % progressTracker == 0:
             print agent.gamesSoFar
-            print agent.getValues()
+            # print agent.getValues()
         if agent.shouldStopEpisode():
             agent.stopEpisode()
 
@@ -75,7 +83,7 @@ def runEpisodes(game, agent, progressTracker, inTraining):
             # shows rewards in terms of line clears: penalty for losing a game is -0.5, line clears each add 0.001 to score
             averageRewards = (agent.episodeRewards / agent.gamesPerEpisode + 0.5) * 1000
 
-            print averageRewards
+            # print averageRewards
             gameSet = str(agent.gamesSoFar - agent.gamesPerEpisode) + "-" + str(agent.gamesSoFar)
             episodesInfo.append(
                 infoString + " GAMES " + gameSet + "\t\t" +
@@ -84,6 +92,10 @@ def runEpisodes(game, agent, progressTracker, inTraining):
     return episodesInfo
 
 def printList(l):
+    """
+    Print out elements of a list line by line.
+    Catch case where list we pass in is undefined.
+    """
     try:
         for el in l:
             print el
@@ -91,17 +103,26 @@ def printList(l):
         pass
 
 def writeToFile(fileName, d):
+    """
+    Save learned q-values/weights to pickle file.
+    """
     filePath = "../values/" + fileName + ".pickle"
     with open(filePath, "wb") as f:
         cPickle.dump(d, f)
 
 def readDictFile(fileName):
+    """
+    Read in q-values/weights from pickle file.
+    """
     filePath = "../values/" + fileName + ".pickle"
     with open(filePath, "rb") as f:
         d = cPickle.load(f)
     return d
 
 def parseAgentArgs(args, willTrain):
+    """
+    Parse arguments to be sent to agent instance.
+    """
     opts = {}
 
     if args is not None:
@@ -120,9 +141,11 @@ def parseAgentArgs(args, willTrain):
     return opts
 
 def readCommand(argv):
+    """
+    Read command line options.
+    """
     from optparse import OptionParser
 
-    # THIS USAGE STRING IS STILL IN PROGRESS AND SHOULD BE DISREGARDED UNTIL COMPLETION
     usageStr = """
     USAGE:      python tetroid.py <options>
     EXAMPLES:   (1) python tetroid.py

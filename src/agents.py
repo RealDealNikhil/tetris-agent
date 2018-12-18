@@ -1,4 +1,9 @@
-# contains random agent, qlearning agent, approximate qlearning agent
+"""
+All agents we have defined for the game.
+Contains Random Agent, Greedy Agent, Exact Learning Agent, Approximate Learning Agent.
+All Agents extend from the RLAgent class, which has functions to keep track of episodes and rewards.
+All agents also have a 'stateExtractor', which extracts the representation of the state that agent uses given the current board and pieces.
+"""
 import random, util, copy
 from featureExtractor import *
 
