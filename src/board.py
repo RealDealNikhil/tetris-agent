@@ -130,12 +130,12 @@ class Board:
         numLinesRemoved = self.removeCompleteLines()
 
         # model 1
-        if numLinesRemoved == 0:
-            return -1
-        return numLinesRemoved * 1000
+        # if numLinesRemoved == 0:
+            # return -1
+        # return numLinesRemoved * 1000
 
         # model 2
-        #return numLinesRemoved / float(1000)
+        return numLinesRemoved / float(1000)
 
         # model 3
         # if numLinesRemoved == 0:
