@@ -1,3 +1,7 @@
+"""
+Feature Extractors.
+"""
+
 import util, copy
 from board import *
 from pieceGenerator import *
@@ -93,11 +97,7 @@ class Extractor:
                         blankSpaceSet.add(coordinates)
         return blankSpaceSet
 
-    def getFeatures(self, state, action):
-        features = util.Counter()
-
-        features["bias"] = 1.0
-
+    def takeAction(self, state, action):
         oldboard, piece, nextPiece = state
         newBoard = copy.deepcopy(oldboard)
         board = Board(len(newBoard), len(newBoard[0]), newBoard)
@@ -105,6 +105,19 @@ class Extractor:
 
         currPiece.setAction(action)
         board.addToBoard(currPiece)
+
+        return board, currPiece
+
+    def getGreedyFeatures(self, state, action):
+        board, currPiece = self.takeAction(state, action)
+        return board.removeCompleteLines(), len(self.getHoles(board.board))
+
+    def getFeatures(self, state, action):
+        features = util.Counter()
+
+        features["bias"] = 1.0
+
+        board, currPiece = self.takeAction(state, action)
 
         numLinesRemoved = board.removeCompleteLines()
         # features["numLinesRemoved"] = numLinesRemoved
@@ -115,10 +128,10 @@ class Extractor:
         features["avgHeightDiff"] = self.getAvgHeightDiff(topLine)
 
         blankSpaceSet = self.getHoles(board.board)
-        features["numHoles"] = len(blankSpaceSet)
+        # features["numHoles"] = len(blankSpaceSet)
 
         holeSizeSquared = self.getHolesSizeSquared(blankSpaceSet, board, topLine)
-        # features["holeSizeSquared"] = holeSizeSquared
+        features["holeSizeSquared"] = holeSizeSquared / float(board.width * board.height)
 
         features.divideAll(float(board.width * board.height))
 

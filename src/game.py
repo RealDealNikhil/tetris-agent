@@ -80,7 +80,7 @@ class Game:
 
             # if no more legal actions, game is over
             if len(legalActions) == 0:
-                # reward = -0.5
+                reward = -0.5
                 agent.observeTransition(state, action, nextState, reward, legalActions)
                 return
 

@@ -1,4 +1,9 @@
-# contains random agent, qlearning agent, approximate qlearning agent
+"""
+All agents we have defined for the game.
+Contains Random Agent, Greedy Agent, Exact Learning Agent, Approximate Learning Agent.
+All Agents extend from the RLAgent class, which has functions to keep track of episodes and rewards.
+All agents also have a 'stateExtractor', which extracts the representation of the state that agent uses given the current board and pieces.
+"""
 import random, util, copy
 from featureExtractor import *
 
@@ -24,7 +29,8 @@ class RLAgent:
         pass
 
     def stateExtractor(self, board, currentPiece, nextPiece):
-        return (board.board, currentPiece.shape, nextPiece.shape)
+        boardCopy = copy.deepcopy(board.board)
+        return (boardCopy, currentPiece.shape, nextPiece.shape)
 
     def observeTransition(self, state, action, nextState, reward, legalActions):
         self.episodeRewards += reward
@@ -76,6 +82,28 @@ class RandomAgent(RLAgent):
         action = random.choice(actions)
         return action
 
+class GreedyAgent(RLAgent):
+    def __init__(self, **args):
+        self.featExtractor = Extractor()
+        RLAgent.__init__(self, **args)
+
+    def getAction(self, state, actions):
+        a_lines = None
+        a_holes = None
+        max_lines = float('-inf')
+        min_holes = float('inf')
+        for action in actions:
+            linesRemoved, holes = self.featExtractor.getGreedyFeatures(state, action)
+            if linesRemoved > max_lines:
+                max_lines = linesRemoved
+                a_lines = action
+            if holes < min_holes:
+                min_holes = holes
+                a_holes = action
+        if max_lines == 0:
+            return a_holes
+        return a_lines
+
 class ExactQAgent(RLAgent):
     def __init__(self, **args):
         RLAgent.__init__(self, **args)
@@ -102,24 +130,6 @@ class ExactQAgent(RLAgent):
         for action in legalActions:
             maxVal = max(maxVal, self.getQValue(state, action))
         return maxVal
-
-    # FOR EXTRACTING POLICY
-    # def getQWeight(self, state, action, weights, features):
-        # return weights * features
-
-    # def computeValueFromQWeights(self, state, legalActions, weights, features):
-        # """
-          # Returns max_action Q(state,action)
-          # where the max is over legal actions.  Note that if
-          # there are no legal actions, which is the case at the
-          # terminal state, you should return a value of 0.0.
-        # """
-        # if len(legalActions) == 0:
-            # return 0.0
-        # maxVal = float('-inf')
-        # for action in legalActions:
-            # maxVal = max(maxVal, self.getQWeight(state, action, weights, features))
-        # return maxVal
 
     def computeActionFromQValues(self, state, legalActions):
         """
@@ -197,10 +207,6 @@ class ApproximateQAgent(ExactQAgent):
     def getValues(self):
         return self.weights
 
-    def stateExtractor(self, board, currentPiece, nextPiece):
-        boardCopy = copy.deepcopy(board.board)
-        return (boardCopy, currentPiece.shape, nextPiece.shape)
-
     def getWeights(self):
         return self.weights
 
@@ -216,20 +222,6 @@ class ApproximateQAgent(ExactQAgent):
         Should update your weights based on transition
         """
         features = self.featExtractor.getFeatures(state, action)
-        # print "CURRENT STATE"
-        # print state, action
-        # print "FEATURES OF CURRENT STATE"
-        # print features
-        # print "REWARD"
-        # print reward
-        # print "VALUE OF CURRENT STATE"
-        # print self.getQValue(state, action)
-        # print "VALUE OF NEXT STATE"
-        # print self.computeValueFromQValues(nextState, legalActions)
         difference = self.alpha * (reward + self.discount * self.computeValueFromQValues(nextState, legalActions) - self.getQValue(state, action))
-        # print "DIFFERENCE"
-        # print difference
         for i in features:
             self.weights[i] += difference * features[i]
-        # print "WEIGHTS"
-        # print self.weights
