@@ -1,8 +1,9 @@
-\documentclass[11pt]{article}
+\documentclass[10pt]{article}
 \usepackage{common}
 \usepackage{dirtree}
 \usepackage[section]{placeins}
 \usepackage{float}
+\usepackage[colorlinks=true, urlcolor=blue]{hyperref}
 \pagestyle{plain}
 \title{CS182 Final Project}
 \author{Nikhil Suri and Soumil Singh}
@@ -10,6 +11,9 @@
 \begin{document}
 \maketitle{}
 
+\begin{center}
+    \href{https://github.com/RealDealNikhil/tetris-agent}{Click Here To Access Github Repository}
+\end{center}
 
 \section{Introduction}
 The initial goal in undertaking this project was to investigate the possible application of Q-learning for the game of Tetris. More specifically, we wanted to apply Q-learning techniques to create an agent which could learn how to optimally play the game i.e. optimally 'clear lines' and survive for as long as possible. Our goal was to compare the effectiveness of exact Q-learning techniques (model-free learning) against approximate Q-learning techniques (model-based learning) for different specifications of the game, that is, for different sizes of the game board and under different models of rewards. We hypothesised that in general an approximate Q-learning learning agent would perform better than an exact Q-learning agent predicated on the reasoning that our defined state-space would be very large, and thus our exact Q-learning agent wouldn't sufficiently explore the state-space in time to conduct its learning. To substantiate this comparison, we also had the goal of comparing the effectiveness of the two different agents for different boards (i.e. differently sized state-spaces), different learning parameters (i.e. different learning rates $\alpha$ and different random-action selection rates for epsilon greedy approach $\epsilon$), and different heuristics/features for the approximate Q-learning agent. After conducting analysis on these manifold aspects, we have the goal of drawing conclusions regarding what an optimal Q-learning agent for this game might look like.
@@ -19,7 +23,7 @@ The Q-learning algorithms we applied, detailed in the Approach section, were fun
 \section{Scope}
 
 \subsection{Background and Related Work}
-To apply these Q-learning approaches to tetris, we used an existing pygame representation of the tetris game \cite{WEBSITE:1}; thus, we had access to code which defined the board, pieces, keyboard-moves, and all visual representation. We then created our own representations for states and actions (the definitions of which can be found in the section titled 'problem specification') for which our agents would learn with. We then applied the feature based and exact Q-learning algorithms we learnt during this course. We utilised a similar structure to that in the Reinforcement Learning problem set to define the 'RLAgent' class \cite{CODE:1}. We also utilised depth-first search to define one of the heuristics that we used for approximate learning. This application of depth-first search was also adapted from our implementation in one of the problem sets \cite{CODE:2}.
+To apply these Q-learning approaches to tetris, we used an existing pygame representation of the tetris game \cite{WEBSITE:1}; thus, we had access to code which defined the board, pieces, keyboard-moves, and all visual representation. We then created our own representations for states and actions (the definitions of which can be found in the section titled 'problem specification') for which our agents would learn with. We then applied the feature based and exact Q-learning algorithms we learnt during this course. We utilised a similar structure to that in the Reinforcement Learning problem set to define the 'RLAgent' class \cite{CODE:1}. We also utilised an iterative depth-first search to define one of the heuristics that we used for approximate learning. This application of depth-first search was also adapted from our implementation in one of the problem sets \cite{CODE:2}.
 
 \subsection{Problem Specification}
 The specific problem that we are investigating is how well reinforcement learning, through exact and approximate q learning, can be applied to the game of Tetris. To apply reinforcement learning to Tetris, we must have a formal definition of the game, the state space, and the action set of Tetris.
@@ -33,7 +37,7 @@ In addition to knowing the entire board configuration and falling piece, the pla
 
 \bigskip
 
-For our project, we have slightly simplified Tetris. In real Tetris, part of the challenge of placing pieces on the board (in addition to choosing the best rotation and column to drop the piece in) is actually getting the piece to the column in which you want to drop it. Pieces spawn in the center at the top of the board and fall at a certain rate. The rate at which pieces fall is determined by how many lines the player has cleared. Once a falling piece touches the stack of pieces already on the board, it becomes stuck, and the player can no longer move it. In some versions of Tetris, there is additional complexity where, for a short time after the piece touches the stack, the player can continue to move it from side to side and rotate it. Currently, we do not support these features in our implementation of the game. We also currently do not allow the agent to hold a piece in reserve. In our implementation, the agent is simply given a piece which it can place anywhere atop the current stack of pieces on the board.
+For our project, we have slightly simplified Tetris. In real Tetris, part of the challenge of placing pieces on the board (in addition to choosing the best rotation and column to drop the piece in) is actually getting the piece to the column in which you want to drop it. Pieces spawn in the center at the top of the board and fall at a certain rate. The rate at which pieces fall is determined by how many lines the player has cleared. Once a falling piece touches the stack of pieces already on the board, it becomes stuck, and the player can no longer move it. In some versions of Tetris, there is additional complexity where, for a short time after the piece touches the stack, the player can continue to move it from side to side and rotate it. Currently, we do not support these features in our implementation of the game. We also currently do not allow the agent to hold a piece in reserve. In our implementation, the agent is simply given a piece which it can place anywhere atop the current stack of pieces on the board and is allowed unlimited compute time.
 
 \subsubsection{State Space}
 Tetris has a huge state space. Each square on the board can either have a block in it or not. If we let $w$ be the width of the board and $h$ be the height of the board, then the number of possible board configurations is $$2^{w\cdot h}$$
@@ -47,13 +51,13 @@ However, we note that this reduction is really of no help. A typical board in Te
 $$2^{200} - \sum_{k=1}^{20}\binom{20}{k}2^{10\cdot(20-k)}=1575259648227583387903265739476252776198605528180667457712127$$
 possible states. Even on a smaller board with dimensions 5x8, we will still have
 $$2^{40} - \sum_{k=1}^{8}\binom{8}{k}2^{5\cdot(8-k)}=792614637311$$
-possible states. Clearly, training an exact Q Learning agent which stores entire board configurations as states is not feasible for Tetris. We must also consider that a state does not consist solely of a board configuration; in Tetris we are also know what the falling piece and next piece are. Since there are 7 pieces in Tetris, our state space is already larger by a factor of 49. Therefore, an exact Q Learning agent requires a much more concise way of representing states. Here, we introduce the concept of the "top line" of a board. The top line of a board is the $w$ (where $w$ is the width of the board) free spaces (not occupied by blocks) which are at the top of each column of the board. This greatly reduces our state space. To count the number of possible top line configurations that there are in a board of width $w$ and height $h$, let us first consider the number of ways to place blocks in a single column. In a single column, there are $h$ ways to arrange blocks ($h$ locations to place a block). In 2 columns, there are $h^2$ ways to arrange blocks. We need to correct for counting complete rows. The number of permutations where all of the blocks are in the same row is $h$. Therefore, the total number of top line configurations that we will have is
+possible states. Clearly, training an exact Q Learning agent, which stores entire board configurations as states, is not feasible for Tetris. We must also consider that a state does not consist solely of a board configuration; in Tetris we are also know what the falling piece and next piece are. Since there are 7 pieces in Tetris, our state space is already larger by a factor of 49. Therefore, an exact Q Learning agent requires a much more concise way of representing states. Here, we introduce the concept of the "top line" of a board. The top line of a board is the $w$ (where $w$ is the width of the board) free spaces (not occupied by blocks) which are at the top of each column of the board. This greatly reduces our state space. To count the number of possible top line configurations that there are in a board of width $w$ and height $h$, let us first consider the number of ways to place blocks in a single column. In a single column, there are $h$ ways to arrange blocks ($h$ locations to place a block). In 2 columns, there are $h^2$ ways to arrange blocks. We need to correct for counting complete rows. The number of permutations where all of the blocks are in the same row is $h$. Therefore, the total number of top line configurations that we will have is
 $$h^w - h$$
 For a typical board of size 10x20 the number of top line configurations will be
 $$20^{10} - 20 = 10239999999980$$
 This is still quite large. However, for a smaller board of size 5x8 the number of top line configurations will be
 $$8^5 - 8 = 32760$$
-Now this is a feasible state space size! We can make this even smaller if we consider the effect of "normalization". By normalization, we mean that we can "normalize" a (row, col) top line of $((2,0),(2,1),(1,2),(1,3),(2,4))$ to $((1,0),(1,1),(0,2),(0,3),(1,4))$. The key observation that leads to normalization is that from the \textit{perspective of placing pieces}, the two top lines are the same. We would want the same action that occurs in the latter top line to occur in former top line, because the agent should be selecting the optimal action in both cases. Normalization therefore has the effect of always reducing a top line to one which has at least one column which is empty. To calculate the effect which normalization has, let us consider the case where there is one empty column on the board. The number top lines we can have is
+Now this is a feasible state space size! We can make this even smaller if we consider the effect of "normalization". By normalization, we mean that we can "normalize" a (row, col) top line of $((2,0),(2,1),(1,2),(1,3),(2,4))$ to $((1,0),(1,1),(0,2),(0,3),(1,4))$. The key observation is that we would want the same action that occurs in the latter top line to occur in former top line, because the agent should be selecting the optimal action in both cases. Normalization therefore has the effect of always reducing a top line to one which has at least one column which is empty. To calculate the effect which normalization has, let us consider the case where there is one empty column on the board. The number top lines we can have is
 $$h^{w-1}\binom{w}{1}$$
 If there are two empty columns, the number of top lines we can have is
 $$h^{w-2}\binom{w}{2}$$
@@ -65,7 +69,7 @@ On the smaller board of size 5x8 the number of normalized top lines will be
 $$\sum_{k=1}^{4} 8^{5-k}\binom{5}{k} = 26280$$
 Adding in the falling piece and next piece, we see that on a board of size 5x8 the size of the state space will be
 $$(49)(26280) = 1287720$$
-Although large, this state space is still manageable for exact learning. For approximate learning, we do not need to worry about reducing the state space so much. In approximate learning, we do not need to store a table of (state, action) pairs. We determine the value of a state by using heuristics which are calculated based on the current configuration of the entire board, the falling piece, and the next piece. Therefore, our states for approximate q learning are simply the entire board configuration, the falling piece, and the next piece.
+Although large, this state space is still manageable for exact learning. For approximate learning, we do not need to worry about reducing the state space so much. In approximate learning, we do not need to store a table of (state, action) pairs. We determine the value of a state by using heuristics which are calculated based on the current configuration of the entire board, the falling piece, and the next piece. Therefore, our states for approximate Q-learning are simply the entire board configuration, the falling piece, and the next piece.
 
 \subsubsection{Action Set}
 Given a state, we have defined the set of legal actions for that state as (rotation, column) pairs. Here, rotation is a number that represents which rotation a falling piece is in. Column is a number that represents which column we are dropping the piece now, with respect to the top left corner of that piece in its rotation. Once an action is chosen, we will set the rotation of the falling piece, move it over to the column which we want to drop it down, and drop it as far down as it can go in that column. The maximum number of rotations for any piece is 4. In a board of width $b$, the maximum number of columns which we can drop a piece down is  $b$. Therefore, there are at most $4b$ actions for every piece. Since there are 7 different pieces in Tetris, the number of different actions there are is at most $28b$. We use the same action set for approximate learning as we do for exact learning.
@@ -77,7 +81,7 @@ The implementation of the game itself is adapted from "Tetronimo" (a Tetris clon
 
 \subsection{Algorithms}
 The main algorithms that we used were the Exact Q Learning and Approximate Q Learning algorithms \cite{CODE:3}. As defined in the lecture notes, the Exact Q Learning algorithm stores a lookup table of (state, action) pairs with their associated Q-values. To update Q-values in the case of exact Q-learning, we use the following algorithm where $s$ and $a$ are the previous state and action, $s'$ is the new state, $r$ is the observed reward, $\gamma$ is the discount factor, and $\alpha$ is the learning rate:
-\begin{algorithm}
+\begin{algorithm}[H]
   \begin{algorithmic}
     \Procedure{updateQValues}{$s, a, s', r$}
         \State{$sample \gets r + \gamma\max_{a'}Q(s', a')$}
@@ -85,11 +89,11 @@ The main algorithms that we used were the Exact Q Learning and Approximate Q Lea
     \EndProcedure{}
   \end{algorithmic}
   \caption{Exact Q Learning Q-value Update}
-\end{algorithm}\\
+\end{algorithm}
 As defined in the lecture notes, the approximate Q Learning algorithm stores a table of weights associated with pre-defined features. These features are obtained by evaluating certain heuristics on a (state, action) pair. The Q-value of a state thus becomes the dot product of the feature and weight vectors:
 $$Q(s,a) = w_1f_1(s,a) + w_2f_2(s,a) + \ldots + w_nf_n(s,a)$$
 To update values for the weights, we use the following algorithm where where $s$ and $a$ are the previous state and action, $s'$ is the new state, $r$ is the observed reward, $\gamma$ is the discount factor, and $\alpha$ is the learning rate:
-\begin{algorithm}
+\begin{algorithm}[H]
   \begin{algorithmic}
     \Procedure{updateWeights}{$s, a, s', r$}
         \State{$difference \gets \alpha(r + \gamma\max_{a'}Q(s', a') - Q(s,a))$}
@@ -99,8 +103,8 @@ To update values for the weights, we use the following algorithm where where $s$
     \EndProcedure{}
   \end{algorithmic}
   \caption{Approximate Q Learning Weights Update}
-\end{algorithm}\\
-For our implementation, we adopted much of the code we used for problem set 3 on reinforcement learning in pacman. To store our Q-value and weight lookup tables, we used the \texttt{Counter} object defined in \texttt{util.py}.
+\end{algorithm}
+For our implementation, we adopted some of the code we used for problem set 3 on reinforcement learning in pacman. To store our Q-value and weight lookup tables, we used the \texttt{Counter} object defined in \texttt{util.py}.
 
 \bigskip
 
@@ -118,7 +122,7 @@ We used 3 different reward models to test our agents. Below is a description of 
 We defined and tested several heuristics for approximate learning. In our feature extractor, we calculated features given a state-action pair. To do this, we made a copy of the current board-representation (so that by performing the given 'action', the actual board was not edited) and performed the action on this copy. Then, we calculated heuristics on this board-copy to assess what our 'features' would be if we performed a particular action on a particular current board representation. Thus, given a (state, action) pair, our heuristics  were calculated as follows:
 \begin{enumerate}
     \item \textbf{Highest Point:}
-    This refers to the highest point on the current 'stack' on the board, where the stack refers to the amalgamation of pieces below the empty space at the top of the board. We anticipated that our approximate agent would learn negative weights for this feature, because a larger 'highest point' would, by proxy, imply a higher 'piece stack', which would mean our agent is closer to breaching the top of the board and dying. (we should get some images to display these)
+    This refers to the highest point on the current 'stack' on the board, where the stack refers to the amalgamation of pieces below the empty space at the top of the board. We anticipated that our approximate agent would learn negative weights for this feature, because a larger 'highest point' would, by proxy, imply a higher 'piece stack', which would mean our agent is closer to breaching the top of the board and dying.
     \item \textbf{Aggregate Height:}
     This is the sum of all the highest points of each column of the current stack of blocks that are on the board. This is another feature which we would expect our agent to learn a negative weight for, because a higher aggregate height means that our agent is closer to the top of the board and losing.
     \item \textbf{Holes:}
@@ -137,7 +141,7 @@ After calculating the value for each feature on a board of width $w$ and height 
 \section{Experiments}
 
 \subsection{Methodology}
-Testing our agents took up a significant portion of our time to complete this project. The challenge of testing our exact learning agents was that there are so many Q-values, so learning an effective policy could take hundreds of thousands of iterations. The challenge of testing our approximate learning agents was that there were many features to compare against each other, and sometimes our agents learned weights for features so well that they continued to play for a very long time during testing! Therefore, to obtain more visibility through our training and testing runs, we trained and tested our agents in sets of games and recorded average scores over training and testing episodes. For example, we often trained our exact learning agents on sets of 50000 games, checked and recorded our results, and then loaded in the learned q-values and tested for another 50000 games. We did the same for our approximate agents, though they needed many fewer training games. To export and import q-values and weights across training and testing runs, we used the python library \texttt{cPickle}.
+Testing our agents took up a significant portion of our time to complete this project. The challenge of testing our exact learning agents was that there are so many Q-values, so learning an effective policy could take hundreds of thousands of iterations. The challenge of testing our approximate learning agents was that there were many features to compare against each other, and sometimes our agents learned weights for features so well that they continued to play for a very long time during testing! Therefore, to obtain more visibility through our training and testing runs, we trained and tested our agents in sets of games and recorded average scores over training and testing episodes. For example, we often trained our exact learning agents on sets of 50000 games, checked and recorded our results, and then loaded in the learned q-values and tested for another 50000 games. We did the same for our approximate agents, though they needed many fewer training games. To export and import q-values and weights across training and testing runs, we used the python library \href{https://docs.python.org/2/library/pickle.html#module-cPickle}{cPickle}.
 
 \bigskip
 
@@ -161,10 +165,10 @@ We tested our baseline agents on 5x8 and 10x20 boards. For the 5x8 boards, we to
   \end{tabular}
   \caption{Average Line Clears on 5x8 and 10x20 boards.}
 \end{table}
-Some intuition as to why the Random agent performs worse on the 10x20 board than on the 5x8 board is that it is likely much easier to randomly get line clears on the 5x8 board because it has a smaller width. We suspect that the greedy agent does not generalize so well to the 10x20 board because of the larger width, and because it is not taking into account and weighting other features such as the height, bumpiness, or size of the holes.
+Some intuition as to why the Random agent performs worse on the 10x20 board than on the 5x8 board is that it is likely much easier to randomly get line clears on the 5x8 board because it has a smaller width. We suspect that the greedy agent does not perform much better on the 10x20 board because of the larger width, and because it is not taking into account and weighting other features such as the height, bumpiness, or size of the holes.
 
 \subsubsection{Exact vs. Approximate Learning}
-If there is one major takeaway from this project, it is that approximate learning completely outperforms exact learning for Tetris. Typically our exact learning agents took around 500000 training games to get to a point where they could clear just 7 lines per game on average on a 5x8 board. Our approximate agents were able to clear, on average, 20 lines per game on a 5x8 board after only 500 training games. The graph below shows the comparison between the performance of approximate and exact learning on a 5x8 board over 3000 training games:\\
+Our approximate learning agent completely outperforms our exact learning agent. Typically our exact learning agents took around 500000 training games to get to a point where they could clear just 7 lines per game on average on a 5x8 board. Our approximate agents were able to clear, on average, 20 lines per game on a 5x8 board after only 500 training games. The graph below shows the comparison between the performance of approximate and exact learning on a 5x8 board over 3000 training games:\\
 \begin{center}
     \includegraphics[scale=0.50]{exactvsapprox.png}
 \end{center}
@@ -182,7 +186,7 @@ We decided on these sets of feature combinations because we felt that it would b
     \includegraphics[scale=0.50]{heuristics.png}
 \end{center}
 
-In general, the feature 'aggregate height' seemed to produce better results than the 'highest point' feature, as evidenced by the superior performance of the agent when trained with feature sets 3 and 4. Intuitively, Most interestingly, feature set 2 produced the worst results, but feature set 4 produced the best, where the only difference between feature sets 2 and 4 is that the 'height' feature is highest point in set 2, and aggregate height in set 4. In other words, in the case we used the squared hole size heurtistic, we get the both the best and worst agent performances.
+In general, the feature 'aggregate height' seemed to produce better results than the 'highest point' feature, as evidenced by the superior performance of the agent when trained with feature sets 3 and 4. Intuitively, Most interestingly, feature set 2 produced the worst results, but feature set 4 produced the best, where the only difference between feature sets 2 and 4 is that the 'height' feature is highest point in set 2, and aggregate height in set 4. In other words, in the case we used the squared hole size heurtistic, we get the both the best and worst agent performances depending on which feature for 'height' we use.
 
 \subsubsection{Learning Parameters and Board Sizes}
 We mainly experimented with varying the learning parameters for $\alpha$ and $\epsilon$, while keeping $\gamma$ constant at a value of 1. The intuition behind this was that we wanted our agents to always be planning for the future as much as possible, since in tetris line clears do not happen after every single move. Training and testing agents took a very long time. Ideally, given more time, we would also like to experiment with varying our value of $\gamma$. We found that low values of $\alpha$ generally gave the best results. We think this may be the case because, again, line clears do not happen very often. Therefore, it is important to not "overwrite" old information at too fast a rate. We also experimented with different board sizes for our agents. We found that the exact learning agent performed worse on wider boards and better on taller boards. We think this may be the case because wider boards make it much harder to clear lines, while taller board allow the agent to stay alive for longer and thus clear more lines. Below are some graphs detailing our results:
@@ -239,7 +243,7 @@ One aspect of our project which we would definitely like to continue working on 
 
 \bigskip
 
-Finally, there are lots of ways in which we could extend our project to make it more similar to the real game of Tetris, and hopefully achieve better performance. Below are a few of the best ideas we have:
+Finally, there are lots of ways in which we could extend our project to make it more similar to the real game of Tetris, and hopefully achieve better performance. Below are a couple of the best ideas we have:
 \begin{enumerate}
     \item In actual Tetris, the player also has the ability to store a single piece in reserve for later use. This can be useful for a few different reasons: perhaps the piece is one that will allow the player to quickly clear many lines later so the player will plan to construct their board according to that piece. Or, perhaps the piece is one that the player cannot find a good position for on the current board, so the player can put off using this piece. An extension of the project that we think would lead to better performance is to add in this feature of placing a piece in reserve. Then, we could modify our features to take this reserve piece into account. For example, if we see that all of the values for placing the current piece on the board are less than a certain threshold, and it would actually be better to use the piece in reserve, we can choose to swap these pieces.
     \item Another aspect in real Tetris which we chose to not include in our implementation is that pieces fall at a certain rate, based on what "level" the player is on (where the level is determined by how many line clears the player has made so far). An interesting extension to the project could be to make the agent have to deal with pieces that fall at a certain rate. In this model of the game, the agent's time to compute an action will be limited based on the current level. The amount of time that the agent spends computing what the optimal action should be will be very important because in this model of the game, the agent would have to actually navigate and rotate the piece into the location that it deems optimal as the piece falls. Perhaps we could even add in a feature for the amount of time that the agent should spend computing features!
@@ -249,9 +253,6 @@ Finally, there are lots of ways in which we could extend our project to make it 
 
 \section{System Description}
 The main file structure of our project is as follows:
-
-\bigskip
-
 \dirtree{%
     .1 tetris-agent/.
     .2 docs/.
@@ -260,9 +261,6 @@ The main file structure of our project is as follows:
     .2 src/.
     .2 values/.
 }
-
-\bigskip
-
 The \texttt{docs} folder contains PDF documents for our project proposal, update, and final report. The \texttt{img} folder contains any images (including graph images) that we have included in any of our PDF documents. The \texttt{latex} folder contains latex files used to generate the PDF documents. All of our code resides in the \texttt{src} folder, and the \texttt{.pickle} files that we used to store learned Q-values and weights for training sessions are held in the \texttt{values} folder.
 
 \bigskip
@@ -283,8 +281,7 @@ To run our code, first a user must \texttt{cd} into the \texttt{src} directory. 
 Some example commands are below. Note that currently the rewards model  that is hard-coded into our system is rewards model 2, since that had the best performance during testing.
 \begin{enumerate}
     \item \texttt{python tetroid.py -a ApproximateQAgent -l 300TrainFeatures}\\ Running this command will load in the file \texttt{300TrainFeatures.pickle} from the \texttt{values} directory and show our Approximate Q Learning Agent playing the game using these weights on a 10x20 board.
-    \item \begin{verbatim} python tetroid.py
-    -a ExactQAgent
+    \item \begin{verbatim} python tetroid.py -a ExactQAgent
     -g numTraining=1,numTesting=5,gamesPerEpisode=10000,alpha=0.05
     -p 1000 --train --test -n -b 5x8 -x foo
     \end{verbatim}
@@ -292,7 +289,7 @@ Some example commands are below. Note that currently the rewards model  that is 
 \end{enumerate}
 
 \section{Group Makeup}
-This project was completed by Nikhil Suri and Soumil Singh. Both were responsible for and contributed to implementation, experimentation, analysis, and documentation of the entire system.
+This project was completed by Nikhil Suri and Soumil Singh. Both were responsible for and contributed evenly across implementation, experimentation, written analysis, and documentation of the entire system.
 
 \bibliographystyle{plain}
 \bibliography{final-project}
