@@ -200,6 +200,10 @@ class ApproximateQAgent(ExactQAgent):
         self.featExtractor = Extractor()
         ExactQAgent.__init__(self, **args)
 
+    def stateExtractor(self, board, currentPiece, nextPiece):
+        boardCopy = copy.deepcopy(board.board)
+        return (boardCopy, currentPiece.shape, nextPiece.shape)
+
     def setValues(self, values={}):
         self.weights = util.Counter(values)
         print self.weights
