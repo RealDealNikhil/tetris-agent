@@ -4,8 +4,23 @@ We conducted many experiments which consisted of multiple training and testing e
 
 Note that we only saved records of training the approximate agent on rewards model 2. This was done for a couple of reasons. First, the results for the approximate agent on model 1 were terrible - the agent learned to maximize features it was expected to minimize - so we saw no reason to keep files of learned weights for model 1. Second, the results for the approximate agent on model 3 were similar to those on model 2. However, the approximate agent performed better on average under model 3. Since the training time for the approximate agent is quite short, we decided to not store these learned weights (for model 3) either.
 
+The general process for experimentation was the following:
+1. Train the agent for some number of iterations (games).
+2. Test the agent using those learned values for some number of games.
+3. Repeat steps 1. and 2. to build upon these learned values.
+
 The first set of files store values that were learned after training on rewards model 1. This rewards model gives a reward of +1000 for every line clear and -1 otherwise. There is no penalty given for losing the game.
-* **#KIters**
+* **#KIters:** Files with names such as 50KIters and 100KIters. Exact agent was trained on a 5x8 board with decreasing alpha and epsilon (both decrease by 0.01 every 50K iterations). Testing results after each training session are below:
+    * 50K: 3974.3119
+    * 100K: 3369.0422
+    * 150K: 2775.8194
+    * 200K:
+    * 250K:
+    * 300K:
+    * 350K:
+    * 400K: 
+    * 450K:
+    * 500K:
 
 * **#KLow**
 
@@ -22,7 +37,7 @@ The second set of files store values that were learned after training on rewards
 
 * **#KM2**
 
-* **M2Comp**
+* **#M2Comp**
 
 * **#KNew6x8**
 
