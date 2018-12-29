@@ -1,5 +1,5 @@
 # Tetroid
-A Tetris reinforcement learning agent by Nikhil Suri and Soumil Singh.
+A Tetris reinforcement learning agent by Nikhil Suri and Soumil Singh. Read about our project purpose, specification, experiments methodology, discussion of results, and usage in our [final paper](docs/final-paper.pdf).
 
 ### Notes
 Initial contributions made by Soumil Singh are not linked to his Github account because of configuration issues.
