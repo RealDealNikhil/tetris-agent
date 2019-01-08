@@ -1,3 +1,24 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:6bc1a767d63870ba3d58a780953a195129246f887c05b571d294ec04237b1f9c
-size 250
+ccopy_reg
+_reconstructor
+p1
+(cutil
+Counter
+p2
+c__builtin__
+dict
+p3
+(dp4
+S'aggregateHeight'
+p5
+F-0.74627161526703745
+sS'bias'
+p6
+F-0.0092645177571703922
+sS'avgHeightDiff'
+p7
+F-0.015053826757485384
+sS'holeSizeSquared'
+p8
+F-0.0059509268790519706
+stRp9
+.
