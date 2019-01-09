@@ -9,8 +9,10 @@ http://inventwithpython.com/pygame
 Released under a "Simplified BSD" license
 """
 
-import cPickle
+import os, cPickle
 from game import *
+
+DIR_PATH = os.path.dirname(os.path.abspath(__file__))
 
 def main():
     """
@@ -106,7 +108,7 @@ def writeToFile(fileName, d):
     """
     Save learned q-values/weights to pickle file.
     """
-    filePath = "../values/" + fileName + ".pickle"
+    filePath = DIR_PATH + "/../values/" + fileName + ".pickle"
     with open(filePath, "wb") as f:
         cPickle.dump(d, f)
 
@@ -114,7 +116,7 @@ def readDictFile(fileName):
     """
     Read in q-values/weights from pickle file.
     """
-    filePath = "../values/" + fileName + ".pickle"
+    filePath = DIR_PATH + "/../values/" + fileName + ".pickle"
     with open(filePath, "rb") as f:
         d = cPickle.load(f)
     return d

@@ -1,10 +1,11 @@
-# Tetroid
-A Tetris reinforcement learning agent by Nikhil Suri and Soumil Singh. Read about our project purpose, specification, experiments methodology, discussion of results, and usage in our [final paper](docs/final-paper.pdf).
-
-This project uses [git-lfs](https://git-lfs.github.com/). Read about how we managed our large files of learned values after training sessions [here](values/README.md).
+# Tetroid Testing Branch
+A lightweight version of our project which only includes the source code, the best weights for our approximate learning agent, and a startup script. This does not contain any latex, pdf, or image files and also does not use git-lfs. 
 
 ## Cloning
-Cloning this project in its entirety requires [git-lfs](https://git-lfs.github.com). To clone a lightweight version which only includes weights learned by our best agent, clone our `test` branch with `git clone --single-branch --branch test <remote-url>`. Cloning the `test` branch does not require git-lfs.
+To clone this branch, run `git clone --single-branch --branch test <remote-url>`.
+
+## Usage
+To watch the agent play the game, simply run `./startup.sh`. To play a game of tetris for yourself, run `python src/tetris.py`.
 
 ### Notes
 Initial contributions made by Soumil Singh are not linked to his Github account because of configuration issues.
